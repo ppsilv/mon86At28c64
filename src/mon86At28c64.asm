@@ -43,6 +43,11 @@ msg2:   db "Mon86 V 1.0.00 2410A",0
 msg3:   db "1MB dram rom at28c64",0
 row:    db 0, 40, 20, 84, 80
 
+msg10:  db "8088 - CPU TXM/8 III",13,10,0
+msg11:	db "Paulo Silva  (c)2024",13,10,0
+msg12:  db "Mon86 V 1.0.00 2410A",13,10,0
+msg13:  db "1MB dram rom at28c64",13,10,0
+
 init2:
         cli				; disable interrupts
         cld				; clear direction flag
@@ -78,6 +83,20 @@ init2:
         mov	bx,msg3
         call printstr
 
+        call configure_uart
+
+        mov	bx,msg10
+        call print
+
+        mov	bx,msg11
+        call print
+
+        mov	bx,msg12
+        call print
+
+        mov	bx,msg13
+        call print
+
 loop:
         jmp loop
         ret
@@ -93,7 +112,8 @@ printAX:
         mov cx, 0x1600
         call basicDelay
         mov al,ah
-        out LCD_DATA, al
+        mov  dx,LCD_DATA
+        out dx, al
         mov cx, 0x1600
         call basicDelay
         ret
@@ -225,6 +245,7 @@ basicDelay:
         jnz basicDelay
         ret
 
+%include "DRV16C550_8088.asm"		
 
         setloc	0FFF0h			; Power-On Entry Point
 reset:
@@ -237,5 +258,3 @@ reset:
         setloc	0FFFEh			; System Model byte
         db	MODEL_BYTE
         db	0ffh
-
-

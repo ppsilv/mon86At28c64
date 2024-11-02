@@ -1,7 +1,7 @@
 ;========================================================================
 ; serial1.inc -  BIOS Serial Port Communication Services (part 1 of 2)
 ;       INT 14h, function AH=01h
-;	INT 14h, function AH=02h
+;		INT 14h, function AH=02h
 ;	detect_serial
 ;	serial port related definitions and tables
 ;	- see serial2.inc for other INT 14h functions
@@ -27,33 +27,33 @@
 ;
 ;=========================================================================
 
-uart_osc	equ	1843200		; 1.8432 MHz is the default UART clock
-one_sec_timeout equ	33135		; 30.18 us intervals in one second
+uart_osc			equ	4915000		; 1.8432 MHz is the default UART clock
+one_sec_timeout 	equ	33135		; 30.18 us intervals in one second
 
-uart_ier_reg	equ	1		; UART Interrupt Enable Register
+uart_ier_reg		equ	1		; UART Interrupt Enable Register
 
-uart_lcr_reg	equ	3		; UART Line Control Register
-uart_lcr_ldiv	equ	80h		; LCR - load divisor bit
-uart_lcr_wlen	equ	03h		; LCR - word length bits
-uart_lcr_stop	equ	04h		; LCR - number of stop bits bit
-uart_lcr_pen	equ	08h		; LCR - parity enable bit
-uart_lcr_peven	equ	10h		; LCR - parity even bit
+uart_lcr_reg		equ	3		; UART Line Control Register
+uart_lcr_ldiv		equ	80h		; LCR - load divisor bit
+uart_lcr_wlen		equ	03h		; LCR - word length bits
+uart_lcr_stop		equ	04h		; LCR - number of stop bits bit
+uart_lcr_pen		equ	08h		; LCR - parity enable bit
+uart_lcr_peven		equ	10h		; LCR - parity even bit
 
-uart_mcr_reg	equ	4		; UART Modem Control Register
-uart_mcr_dtr	equ	1		; MCR - data terminal ready (DTR)
-uart_mcr_rts	equ	2		; MCR - request to send (RTS)
+uart_mcr_reg		equ	4		; UART Modem Control Register
+uart_mcr_dtr		equ	1		; MCR - data terminal ready (DTR)
+uart_mcr_rts		equ	2		; MCR - request to send (RTS)
 
-uart_lsr_reg	equ	5		; UART Line Status Register
-uart_lsr_dr	equ	1		; LSR - data ready (DR)
-uart_lsr_thre	equ	20h		; LSR - THR empty (THRE)
+uart_lsr_reg		equ	5		; UART Line Status Register
+uart_lsr_dr			equ	1		; LSR - data ready (DR)
+uart_lsr_thre		equ	20h		; LSR - THR empty (THRE)
 
-uart_msr_reg	equ	6		; UART Modem Status Register
-uart_msr_cts	equ	10h		; MSR - clear to send (CTS)
-uart_msr_dsr	equ	20h		; MSR - data set ready (DSR)
+uart_msr_reg		equ	6		; UART Modem Status Register
+uart_msr_cts		equ	10h		; MSR - clear to send (CTS)
+uart_msr_dsr		equ	20h		; MSR - data set ready (DSR)
 
-uart_err_timeout equ	80h		; timeout error
+uart_err_timeout	equ	80h		; timeout error
 
-num_serial	equ	4		; number of serial ports
+num_serial			equ	4		; number of serial ports
 
 ;=========================================================================
 ; int_14_fn01 - Send character
@@ -66,12 +66,9 @@ num_serial	equ	4		; number of serial ports
 ;-------------------------------------------------------------------------
 int_14_fn01:
 	push	ax
-	mov	al,(uart_mcr_dtr | uart_mcr_rts) ; set DTR and RTS in MCR:
-					; ready to communicate, request to send
-	mov	bh,(uart_msr_dsr | uart_msr_cts) ; wait for DSR and CTS in MSR:
-					; ready to communicate, clear to send
-	mov	bl,uart_lsr_thre	; and for THRE in LSR:
-					; UART is ready to accept new character
+	mov	al,(uart_mcr_dtr | uart_mcr_rts) ; set DTR and RTS in MCR: ready to communicate, request to send
+	mov	bh,(uart_msr_dsr | uart_msr_cts) ; wait for DSR and CTS in MSR: ready to communicate, clear to send
+	mov	bl,uart_lsr_thre	; and for THRE in LSR: UART is ready to accept new character
 	call	uart_wait_status
 	pop	cx
 	jnz	int_14_timeout		; timeout, original AL is in CL
@@ -282,7 +279,7 @@ detect_serial:
 
 ;-------------------------------------------------------------------------
 ; serial port Interrupt Enable Register addresses - used for port detection
-uart_ier_regs	dw	(3F8h + uart_ier_reg), (2F8h + uart_ier_reg)
+uart_ier_regs	dw	(0xF8 + uart_ier_reg), (0xF8 + uart_ier_reg)
 		dw	(3E8h + uart_ier_reg), (2E8h + uart_ier_reg)
 
 ;-------------------------------------------------------------------------

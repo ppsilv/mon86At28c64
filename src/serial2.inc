@@ -73,7 +73,8 @@ int_14_exit:
 	pop	si
 	pop	dx
 	pop	cx
-	iret
+	ret
+;	iret
 
 ;=========================================================================
 ; int_14_fn00 - Initialize serial port

@@ -34,7 +34,7 @@ msg0_01:   db "Serial driver for 16C550",0
 ;			
 ;			
 configure_uart:
-			mov cx, 0x2fff
+			mov cx, 0x4fff
 			call	basicDelay
 			MOV		AL,0x0	 		;
 			OUT  	uart_IER,	AL	; Disable interrupts
@@ -83,21 +83,23 @@ END:
 
 UART_TX:
 			PUSH AX
-			MOV BX, UART_TX_WAIT			; Set CB to the transmit timeout
+			MOV BX, UART_TX_WAIT	; Set CB to the transmit timeout
 LOOP_UART_TX:
 			IN	AL,	uart_LSR		; Get the line status register
-			AND AL, 0x40					; Check for TX empty
-			JNZ	OUT_UART_TX				; If set, then TX is empty, goto transmit
+			AND AL, 0x60			; Check for TX empty
+			JNZ	OUT_UART_TX			; If set, then TX is empty, goto transmit
+			mov	cx, 0x17ff
+			call basicDelay
 			DEC	BX
 			JNZ LOOP_UART_TX		; Otherwise loop
-			POP	AX							; We've timed out at this point so
-			CLC							; Clear the carry flag and preserve A
+			POP	AX					; We've timed out at this point so
+			CLC						; Clear the carry flag and preserve AX
 			RET
 OUT_UART_TX:
-			POP	AX							; Good to send at this point, so		
-			OUT	uart_tx_rx,AL			; Write the character to the UART transmit buffer
-			mov cx, 0x1ff
-			call	basicDelay
+			POP	AX					; Good to send at this point, so		
+			OUT	uart_tx_rx,AL		; Write the character to the UART transmit buffer
+			mov	cx, 0x17ff
+			call basicDelay
 			STC						; Set carry flag
 			RET
 ;print
@@ -108,9 +110,10 @@ print:
         	mov  al,byte ds:[bx]
         	cmp  al,0h
         	jz   fimPrint
-        	OUT	uart_tx_rx,AL
-			mov	cx, 0x27ff
-			call basicDelay
+cont:
+			CALL UART_TX
+			jnc cont
+        	;OUT	uart_tx_rx,AL
         	inc  bx
         	jmp  print
 fimPrint:   ret
@@ -126,4 +129,7 @@ serialLoop:
 
 			ret
 	
-
+basicDelay:
+        dec cx
+        jnz basicDelay
+        ret

@@ -20,253 +20,139 @@
     20                                  
     21                                  bioscseg	equ	0F000h
     22                                  biosdseg	equ	0040h
-    23                                  LCD_CMD     EQU 0x80
-    24                                  LCD_DATA    EQU 0x81
-    25                                  ;// commands
-    26                                  LCD_CLEARDISPLAY   EQU 0x01
-    27                                  LCD_RETURNHOME     EQU 0x02
-    28                                  LCD_ENTRYMODESET   EQU 0x04
-    29                                  LCD_DISPLAYCONTROL EQU 0x08
-    30                                  LCD_CURSORSHIFT    EQU 0x10
-    31                                  LCD_FUNCTIONSET    EQU 0x20
-    32                                  LCD_SETCGRAMADDR   EQU 0x40
-    33                                  LCD_SETDDRAMADDR   EQU 0x80
-    34                                  
+    23                                  
+    24                                  
+    25                                  
+    26                                          org	START
+    27                                  
+    28 00000000 E9B500                  init:   jmp     init2
+    29                                             ;12345678901234567890
+    30 00000003 38303838202D204350-     msg0:   db "8088 - CPU TXM/8 III",0
+    30 0000000C 552054584D2F382049-
+    30 00000015 494900             
+    31 00000018 5061756C6F2053696C-     msg1:	db "Paulo Silva  (c)2024",0
+    31 00000021 766120202863293230-
+    31 0000002A 323400             
+    32 0000002D 4D6F6E383620562031-     msg2:   db "Mon86 V 1.0.00 2410A",0
+    32 00000036 2E302E303020323431-
+    32 0000003F 304100             
+    33 00000042 314D42206472616D20-     msg3:   db "1MB dram rom at28c64",0
+    33 0000004B 726F6D206174323863-
+    33 00000054 363400             
+    34 00000057 0028145450              row:    db 0, 40, 20, 84, 80
     35                                  
-    36                                          org	START
-    37                                  
-    38 00000000 E9B500                  init:   jmp     init2
-    39                                             ;12345678901234567890
-    40 00000003 38303838202D204350-     msg0:   db "8088 - CPU TXM/8 III",0
-    40 0000000C 552054584D2F382049-
-    40 00000015 494900             
-    41 00000018 5061756C6F2053696C-     msg1:	db "Paulo Silva  (c)2024",0
-    41 00000021 766120202863293230-
-    41 0000002A 323400             
-    42 0000002D 4D6F6E383620562031-     msg2:   db "Mon86 V 1.0.00 2410A",0
-    42 00000036 2E302E303020323431-
-    42 0000003F 304100             
-    43 00000042 314D42206472616D20-     msg3:   db "1MB dram rom at28c64",0
-    43 0000004B 726F6D206174323863-
-    43 00000054 363400             
-    44 00000057 0028145450              row:    db 0, 40, 20, 84, 80
-    45                                  
-    46 0000005C 38303838202D204350-     msg10:  db "8088 - CPU TXM/8 III",13,10,0
-    46 00000065 552054584D2F382049-
-    46 0000006E 49490D0A00         
-    47 00000073 5061756C6F2053696C-     msg11:	db "Paulo Silva  (c)2024",13,10,0
-    47 0000007C 766120202863293230-
-    47 00000085 32340D0A00         
-    48 0000008A 4D6F6E383620562031-     msg12:  db "Mon86 V 1.0.00 2410A",13,10,0
-    48 00000093 2E302E303020323431-
-    48 0000009C 30410D0A00         
-    49 000000A1 314D42206472616D20-     msg13:  db "1MB dram rom at28c64",13,10,0
-    49 000000AA 726F6D206174323863-
-    49 000000B3 36340D0A00         
+    36 0000005C 38303838202D204350-     msg10:  db "8088 - CPU TXM/8 III",13,10,0
+    36 00000065 552054584D2F382049-
+    36 0000006E 49490D0A00         
+    37 00000073 5061756C6F2053696C-     msg11:	db "Paulo Silva  (c)2024",13,10,0
+    37 0000007C 766120202863293230-
+    37 00000085 32340D0A00         
+    38 0000008A 4D6F6E383620562031-     msg12:  db "Mon86 V 1.0.00 2410A",13,10,0
+    38 00000093 2E302E303020323431-
+    38 0000009C 30410D0A00         
+    39 000000A1 314D42206472616D20-     msg13:  db "1MB dram rom at28c64",13,10,0
+    39 000000AA 726F6D206174323863-
+    39 000000B3 36340D0A00         
+    40                                  
+    41                                  init2:
+    42 000000B8 FA                              cli				; disable interrupts
+    43 000000B9 FC                              cld				; clear direction flag
+    44 000000BA B80070                          mov ax, 0x7000
+    45 000000BD 8ED0                            mov ss, ax
+    46 000000BF B800F0                          mov ax, 0xF000
+    47 000000C2 8ED8                            mov ds, ax
+    48 000000C4 31E4                            xor sp, sp
+    49 000000C6 8EC4                            mov es, sp
     50                                  
-    51                                  init2:
-    52 000000B8 FA                              cli				; disable interrupts
-    53 000000B9 FC                              cld				; clear direction flag
-    54 000000BA B80070                          mov ax, 0x7000
-    55 000000BD 8ED0                            mov ss, ax
-    56 000000BF B800F0                          mov ax, 0xF000
-    57 000000C2 8ED8                            mov ds, ax
-    58 000000C4 31E4                            xor sp, sp
-    59 000000C6 8EC4                            mov es, sp
-    60 000000C8 E8D900                          call lcdInit
+    51 000000C8 E89D00                          call configure_uart
+    52                                  
+    53 000000CB BB[5C00]                        mov	bx,msg10
+    54 000000CE E80001                          call print
+    55                                  
+    56 000000D1 BB[7300]                        mov	bx,msg11
+    57 000000D4 E8FA00                          call print
+    58                                  
+    59 000000D7 BB[8A00]                        mov	bx,msg12
+    60 000000DA E8F400                          call print
     61                                  
-    62 000000CB B400                            mov ah, 0
-    63 000000CD B000                            mov al, 0
-    64 000000CF E8A600                          call setCursor
-    65 000000D2 BB[0300]                        mov	bx,msg0
-    66 000000D5 E86300                          call printstr
-    67                                  
-    68 000000D8 B400                            mov ah, 0
-    69 000000DA B001                            mov al, 1
-    70 000000DC E89900                          call setCursor
-    71 000000DF BB[1800]                        mov	bx,msg1
-    72 000000E2 E85600                          call printstr
-    73                                  
-    74 000000E5 B400                            mov ah, 0
-    75 000000E7 B002                            mov al, 2
-    76 000000E9 E88C00                          call setCursor
-    77 000000EC BB[2D00]                        mov	bx,msg2
-    78 000000EF E84900                          call printstr
-    79                                  
-    80 000000F2 B400                            mov ah, 0
-    81 000000F4 B003                            mov al, 3
-    82 000000F6 E87F00                          call setCursor
-    83 000000F9 BB[4200]                        mov	bx,msg3
-    84 000000FC E83C00                          call printstr
-    85                                  
-    86 000000FF E81801                          call configure_uart
-    87                                  
-    88 00000102 BB[5C00]                        mov	bx,msg10
-    89 00000105 E87501                          call print
-    90                                  
-    91 00000108 BB[7300]                        mov	bx,msg11
-    92 0000010B E86F01                          call print
-    93                                  
-    94 0000010E BB[8A00]                        mov	bx,msg12
-    95 00000111 E86901                          call print
+    62 000000DD BB[A100]                        mov	bx,msg13
+    63 000000E0 E8EE00                          call print
+    64                                  
+    65                                  loop:
+    66 000000E3 EBFE                            jmp loop
+    67 000000E5 C3                              ret
+    68                                  
+    69                                  lcdMessage:
+    70 000000E6 E85C01                          call lcdInit
+    71                                  
+    72 000000E9 B400                            mov ah, 0
+    73 000000EB B000                            mov al, 0
+    74 000000ED E82901                          call setCursor
+    75 000000F0 BB[0300]                        mov	bx,msg0
+    76 000000F3 E81501                          call printstr
+    77                                  
+    78 000000F6 B400                            mov ah, 0
+    79 000000F8 B001                            mov al, 1
+    80 000000FA E81C01                          call setCursor
+    81 000000FD BB[1800]                        mov	bx,msg1
+    82 00000100 E80801                          call printstr
+    83                                  
+    84 00000103 B400                            mov ah, 0
+    85 00000105 B002                            mov al, 2
+    86 00000107 E80F01                          call setCursor
+    87 0000010A BB[2D00]                        mov	bx,msg2
+    88 0000010D E8FB00                          call printstr
+    89                                  
+    90 00000110 B400                            mov ah, 0
+    91 00000112 B003                            mov al, 3
+    92 00000114 E80201                          call setCursor
+    93 00000117 BB[4200]                        mov	bx,msg3
+    94 0000011A E8EE00                          call printstr
+    95 0000011D C3                              ret
     96                                  
-    97 00000114 BB[A100]                        mov	bx,msg13
-    98 00000117 E86301                          call print
-    99                                  
-   100                                  loop:
-   101 0000011A EBFE                            jmp loop
-   102 0000011C C3                              ret
-   103                                  
-   104                                  printAL:
-   105 0000011D E681                            out LCD_DATA, al
-   106 0000011F B90016                          mov cx, 0x1600
-   107 00000122 E8D600                          call basicDelay
-   108 00000125 C3                              ret
-   109                                  
-   110                                  printAX:
-   111 00000126 E681                            out LCD_DATA, al
-   112 00000128 B90016                          mov cx, 0x1600
-   113 0000012B E8CD00                          call basicDelay
-   114 0000012E 88E0                            mov al,ah
-   115 00000130 BA8100                          mov  dx,LCD_DATA
-   116 00000133 EE                              out dx, al
-   117 00000134 B90016                          mov cx, 0x1600
-   118 00000137 E8C100                          call basicDelay
-   119 0000013A C3                              ret
-   120                                  
-   121                                  printstr:
-   122 0000013B 3E8A07                          mov al,byte ds:[bx]
-   123 0000013E 3C00                            cmp al,0h
-   124 00000140 7406                            jz  fim
-   125 00000142 E8D8FF                          call printAL
-   126 00000145 43                              inc bx
-   127 00000146 EBF3                            jmp printstr
-   128 00000148 C3                      fim:    ret
-   129                                  
-   130                                  writeRam:
-   131 00000149 50                              push AX
-   132 0000014A B80000                          mov AX, 0h
-   133 0000014D 8ED8                            mov DS, AX
-   134 0000014F 58                              pop AX
-   135 00000150 A30000                          mov [0h], AX
-   136 00000153 C3                              ret
-   137                                  readRam:
-   138 00000154 B80000                          mov AX, 0h
-   139 00000157 8ED8                            mov DS, AX
-   140 00000159 A10000                          mov AX,[0h]
-   141 0000015C C3                              ret
-   142                                  ;byte_to_hex_str
-   143                                  ;This function return in AX the ascii code for hexadecimal number from 0 to F
-   144                                  ;Parameters:
-   145                                  ;               AL = imput
-   146                                  ;               AX = output
-   147                                  ;Changes CL
-   148                                  byte_to_hex_str:
-   149 0000015D 88C4                            mov ah, al
-   150 0000015F B104                            mov cl, 4
-   151 00000161 D2E8                            shr al, cl
-   152 00000163 250F0F                          and ax, 0x0f0f
-   153 00000166 3C09                            cmp al, 0x09
-   154 00000168 7602                            jbe .1
-   155 0000016A 0407                            add al, 'A' - '0' - 10
-   156                                  .1:
-   157 0000016C 80FC09                          cmp ah, 0x09
-   158 0000016F 7603                            jbe .2
-   159 00000171 80C407                          add ah, 'A' - '0' - 10
-   160                                  .2:
-   161 00000174 053030                          add ax, "00"
-   162                                  .ret:
-   163 00000177 C3                              ret
-   164                                  
-   165                                  setCursor:
-   166 00000178 50                              push AX
-   167 00000179 30E4                            xor  ah,ah            ; limpa AH
-   168 0000017B BB[5700]                        mov  bx, row          ; pega o endereço do array
-   169 0000017E 01D8                            add  ax,bx            ; soma com o endereco com AL 1000+1 = 1001=40
-   170 00000180 89C3                            mov  bx, ax           ; poe o 1001 no bx
-   171 00000182 3E8A07                          mov  al, byte ds:[bx] ; bl = 40 lido da memoria 1001 em bx
-   172 00000185 88C3                            mov  bl, al
-   173 00000187 58                              pop  AX               ; resgata AH
-   174 00000188 88D8                            mov  al, bl
-   175 0000018A 00E0                            add  al, ah
-   176 0000018C 0C80                            or   al, LCD_SETDDRAMADDR ;| ( ah + al)
-   177 0000018E E680                            out LCD_CMD, al
-   178 00000190 B90016                          mov cx, 0x1600
-   179 00000193 E86500                          call basicDelay
-   180                                  
-   181 00000196 C3                              ret
-   182                                  setCursor2:
-   183 00000197 B01D                            mov  al, 29
-   184 00000199 0C80                            or   al, LCD_SETDDRAMADDR ;| ( ah + al)
-   185 0000019B E680                            out LCD_CMD, al
-   186 0000019D B90016                          mov cx, 0x1600
-   187 000001A0 E85800                          call basicDelay
-   188 000001A3 C3                              ret
-   189                                  
-   190                                  lcdInit:
-   191 000001A4 B90048                          mov cx, 0x4800
-   192 000001A7 E85100                          call basicDelay
-   193                                  
-   194 000001AA B030                            mov al, 0x30
-   195 000001AC E680                            out LCD_CMD, al
-   196                                  
-   197 000001AE B90008                          mov cx, 0x0800
-   198 000001B1 E84700                          call basicDelay
-   199                                  
-   200 000001B4 B030                            mov al, 0x30
-   201 000001B6 E680                            out LCD_CMD, al
-   202                                  
-   203 000001B8 B96001                          mov cx, 0x0160
-   204 000001BB E83D00                          call basicDelay
-   205                                  
-   206 000001BE B038                            mov al, 0x38    ; function set
-   207 000001C0 E680                            out LCD_CMD, al
-   208                                  
-   209 000001C2 B90016                          mov cx, 0x1600
-   210 000001C5 E83300                          call basicDelay
-   211                                  
-   212 000001C8 B008                            mov al, 0x08    ; display off
-   213 000001CA E680                            out LCD_CMD, al
-   214                                  
-   215 000001CC B90016                          mov cx, 0x1600
-   216 000001CF E82900                          call basicDelay
-   217                                  
-   218 000001D2 B001                            mov al, 0x01    ; clear display
-   219 000001D4 E680                            out LCD_CMD, al
-   220                                  
-   221 000001D6 B90016                          mov cx, 0x1600
-   222 000001D9 E81F00                          call basicDelay
-   223                                  
-   224 000001DC B002                            mov al, 0x02    ; return home
-   225 000001DE E680                            out LCD_CMD, al
-   226                                  
-   227 000001E0 B90016                          mov cx, 0x1600
-   228 000001E3 E81500                          call basicDelay
-   229                                  
-   230 000001E6 B006                            mov al, 0x06    ; entry mode set
-   231 000001E8 E680                            out LCD_CMD, al
-   232                                  
-   233 000001EA B90016                          mov cx, 0x1600
-   234 000001ED E80B00                          call basicDelay
-   235                                  
-   236 000001F0 B00C                            mov al, 0x0c    ; display on, no cursor
-   237 000001F2 E680                            out LCD_CMD, al
-   238                                  
-   239 000001F4 B90016                          mov cx, 0x1600
-   240 000001F7 E80100                          call basicDelay
-   241 000001FA C3                              ret
-   242                                  
-   243                                  basicDelay:
-   244 000001FB 49                              dec cx
-   245 000001FC 75FD                            jnz basicDelay
-   246 000001FE C3                              ret
-   247                                  
-   248                                  %include "DRV16C550_8088.asm"		
+    97                                  writeRam:
+    98 0000011E 50                              push AX
+    99 0000011F B80000                          mov AX, 0h
+   100 00000122 8ED8                            mov DS, AX
+   101 00000124 58                              pop AX
+   102 00000125 A30000                          mov [0h], AX
+   103 00000128 C3                              ret
+   104                                  readRam:
+   105 00000129 B80000                          mov AX, 0h
+   106 0000012C 8ED8                            mov DS, AX
+   107 0000012E A10000                          mov AX,[0h]
+   108 00000131 C3                              ret
+   109                                  ;byte_to_hex_str
+   110                                  ;This function return in AX the ascii code for hexadecimal number from 0 to F
+   111                                  ;Parameters:
+   112                                  ;               AL = imput
+   113                                  ;               AX = output
+   114                                  ;Changes CL
+   115                                  byte_to_hex_str:
+   116 00000132 88C4                            mov ah, al
+   117 00000134 B104                            mov cl, 4
+   118 00000136 D2E8                            shr al, cl
+   119 00000138 250F0F                          and ax, 0x0f0f
+   120 0000013B 3C09                            cmp al, 0x09
+   121 0000013D 7602                            jbe .1
+   122 0000013F 0407                            add al, 'A' - '0' - 10
+   123                                  .1:
+   124 00000141 80FC09                          cmp ah, 0x09
+   125 00000144 7603                            jbe .2
+   126 00000146 80C407                          add ah, 'A' - '0' - 10
+   127                                  .2:
+   128 00000149 053030                          add ax, "00"
+   129                                  .ret:
+   130 0000014C C3                              ret
+   131                                  
+   132                                  
+   133                                  
+   134                                  %include "DRV16C550_8088.asm"		
      1                              <1>         CPU 8086
      2                              <1>         BITS 16
      3                              <1> 
      4                              <1> ; Port
-     5 000001FF F803                <1> COM1:	DW		0x3F8
+     5 0000014D F803                <1> COM1:	DW		0x3F8
      6                              <1> ; Here are the port numbers for various UART registers:
      7                              <1> uart_tx_rx 		EQU  0xf8 ; 0 DLAB = 0 for Regs. TX and RX
      8                              <1> uart_DLL 		EQU  0xf8 ; 0 DLAB = 1 Divisor lacth low
@@ -292,117 +178,880 @@
     28                              <1> 
     29                              <1> UART_TX_WAIT		EQU	0x7fff		; Count before a TX times out
     30                              <1> 
-    31 00000201 53657269616C206472- <1> msg0_01:   db "Serial driver for 16C550",0
-    31 0000020A 6976657220666F7220- <1>
-    31 00000213 31364335353000      <1>
+    31 0000014F 53657269616C206472- <1> msg0_01:   db "Serial driver for 16C550",0
+    31 00000158 6976657220666F7220- <1>
+    31 00000161 31364335353000      <1>
     32                              <1> ;configure_uart
     33                              <1> ;Parameters:None
     34                              <1> ;			
     35                              <1> ;			
     36                              <1> configure_uart:
-    37 0000021A B9FF2F              <1> 			mov cx, 0x2fff
-    38 0000021D E8DBFF              <1> 			call	basicDelay
-    39 00000220 B000                <1> 			MOV		AL,0x0	 		;
-    40 00000222 E6F9                <1> 			OUT  	uart_IER,	AL	; Disable interrupts
+    37 00000168 B9FF4F              <1> 			mov cx, 0x4fff
+    38 0000016B E87B00              <1> 			call	basicDelay
+    39 0000016E B000                <1> 			MOV		AL,0x0	 		;
+    40 00000170 E6F9                <1> 			OUT  	uart_IER,	AL	; Disable interrupts
     41                              <1> 
-    42 00000224 B91F00              <1> 			mov cx, 0x1f
-    43 00000227 E8D1FF              <1> 			call	basicDelay
+    42 00000172 B91F00              <1> 			mov cx, 0x1f
+    43 00000175 E87100              <1> 			call	basicDelay
     44                              <1> 
-    45 0000022A B080                <1> 			MOV		AL, 0x80			;
-    46 0000022C E6FB                <1> 			OUT     uart_LCR,	AL 	; Turn DLAB on
-    47 0000022E B91F00              <1> 			mov cx, 0x1f
-    48 00000231 E8C7FF              <1> 			call	basicDelay
+    45 00000178 B080                <1> 			MOV		AL, 0x80			;
+    46 0000017A E6FB                <1> 			OUT     uart_LCR,	AL 	; Turn DLAB on
+    47 0000017C B91F00              <1> 			mov cx, 0x1f
+    48 0000017F E86700              <1> 			call	basicDelay
     49                              <1> 
-    50 00000234 B008                <1> 			MOV		AL, UART_BAUD_38400 ;0x08
-    51 00000236 E6F8                <1> 			OUT     uart_DLL,   AL	; Set divisor low
-    52 00000238 B91F00              <1> 			mov cx, 0x1f
-    53 0000023B E8BDFF              <1> 			call	basicDelay
+    50 00000182 B008                <1> 			MOV		AL, UART_BAUD_38400 ;0x08
+    51 00000184 E6F8                <1> 			OUT     uart_DLL,   AL	; Set divisor low
+    52 00000186 B91F00              <1> 			mov cx, 0x1f
+    53 00000189 E85D00              <1> 			call	basicDelay
     54                              <1> 
-    55 0000023E B000                <1> 			MOV		AL, 0x00		;
-    56 00000240 E6F9                <1> 			OUT     uart_DLH,	AL	; Set divisor high
-    57 00000242 B91F00              <1> 			mov cx, 0x1f
-    58 00000245 E8B3FF              <1> 			call	basicDelay
+    55 0000018C B000                <1> 			MOV		AL, 0x00		;
+    56 0000018E E6F9                <1> 			OUT     uart_DLH,	AL	; Set divisor high
+    57 00000190 B91F00              <1> 			mov cx, 0x1f
+    58 00000193 E85300              <1> 			call	basicDelay
     59                              <1> 
-    60 00000248 B003                <1> 			MOV     AL, 0x03	; AH	
-    61 0000024A E6FB                <1> 			OUT     uart_LCR,	AL	; Write out flow control bits 8,1,N
-    62 0000024C B91F00              <1> 			mov cx, 0x1f
-    63 0000024F E8A9FF              <1> 			call	basicDelay
+    60 00000196 B003                <1> 			MOV     AL, 0x03	; AH	
+    61 00000198 E6FB                <1> 			OUT     uart_LCR,	AL	; Write out flow control bits 8,1,N
+    62 0000019A B91F00              <1> 			mov cx, 0x1f
+    63 0000019D E84900              <1> 			call	basicDelay
     64                              <1> 
-    65 00000252 B081                <1> 			MOV 	AL,0x81			;
-    66 00000254 E6FA                <1> 			OUT     uart_ISR,	AL	; Turn on FIFO, with trigger level of 8.
+    65 000001A0 B081                <1> 			MOV 	AL,0x81			;
+    66 000001A2 E6FA                <1> 			OUT     uart_ISR,	AL	; Turn on FIFO, with trigger level of 8.
     67                              <1> 								                ; This turn on the 16bytes buffer!
-    68 00000256 C3                  <1> 			RET
+    68 000001A4 C3                  <1> 			RET
     69                              <1> ;UART_RX:
     70                              <1> ;Parameters: 
     71                              <1> ;			AL = return the available character
     72                              <1> ;			If al returns with a valid char flag carry is set, otherwise
     73                              <1> ;			flag carry is clear
     74                              <1> UART_RX:	
-    75 00000257 E4FD                <1> 			IN	AL, uart_LSR	 		; Get the line status register
-    76 00000259 2401                <1> 			AND AL, 0x01		; Check for characters in buffer
-    77 0000025B F8                  <1> 			CLC 				; Clear carry
-    78 0000025C 7403                <1> 			JZ	END				; Just ret (with carry clear) if no characters
-    79 0000025E E4F8                <1> 			IN	AL,uart_tx_rx	; Read the character from the UART receive buffer
-    80 00000260 F9                  <1> 			STC 				; Set the carry flag
+    75 000001A5 E4FD                <1> 			IN	AL, uart_LSR	 		; Get the line status register
+    76 000001A7 2401                <1> 			AND AL, 0x01		; Check for characters in buffer
+    77 000001A9 F8                  <1> 			CLC 				; Clear carry
+    78 000001AA 7403                <1> 			JZ	END				; Just ret (with carry clear) if no characters
+    79 000001AC E4F8                <1> 			IN	AL,uart_tx_rx	; Read the character from the UART receive buffer
+    80 000001AE F9                  <1> 			STC 				; Set the carry flag
     81                              <1> END:			
-    82 00000261 C3                  <1> 			RET
+    82 000001AF C3                  <1> 			RET
     83                              <1> 
     84                              <1> UART_TX:
-    85 00000262 50                  <1> 			PUSH AX
-    86 00000263 BBFF7F              <1> 			MOV BX, UART_TX_WAIT			; Set CB to the transmit timeout
+    85 000001B0 50                  <1> 			PUSH AX
+    86 000001B1 BBFF7F              <1> 			MOV BX, UART_TX_WAIT	; Set CB to the transmit timeout
     87                              <1> LOOP_UART_TX:
-    88 00000266 E4FD                <1> 			IN	AL,	uart_LSR		; Get the line status register
-    89 00000268 2440                <1> 			AND AL, 0x40					; Check for TX empty
-    90 0000026A 7506                <1> 			JNZ	OUT_UART_TX				; If set, then TX is empty, goto transmit
-    91 0000026C 4B                  <1> 			DEC	BX
-    92 0000026D 75F7                <1> 			JNZ LOOP_UART_TX		; Otherwise loop
-    93 0000026F 58                  <1> 			POP	AX							; We've timed out at this point so
-    94 00000270 F8                  <1> 			CLC							; Clear the carry flag and preserve A
-    95 00000271 C3                  <1> 			RET
-    96                              <1> OUT_UART_TX:
-    97 00000272 58                  <1> 			POP	AX							; Good to send at this point, so		
-    98 00000273 E6F8                <1> 			OUT	uart_tx_rx,AL			; Write the character to the UART transmit buffer
-    99 00000275 B9FF01              <1> 			mov cx, 0x1ff
-   100 00000278 E880FF              <1> 			call	basicDelay
-   101 0000027B F9                  <1> 			STC						; Set carry flag
-   102 0000027C C3                  <1> 			RET
-   103                              <1> ;print
-   104                              <1> ;parameters:
-   105                              <1> ;          bx = message address
-   106                              <1> ;
-   107                              <1> print:
-   108 0000027D 3E8A07              <1>         	mov  al,byte ds:[bx]
-   109 00000280 3C00                <1>         	cmp  al,0h
-   110 00000282 740B                <1>         	jz   fimPrint
-   111 00000284 E6F8                <1>         	OUT	uart_tx_rx,AL
-   112 00000286 B9FF27              <1> 			mov	cx, 0x27ff
-   113 00000289 E86FFF              <1> 			call basicDelay
-   114 0000028C 43                  <1>         	inc  bx
-   115 0000028D EBEE                <1>         	jmp  print
-   116 0000028F C3                  <1> fimPrint:   ret
-   117                              <1> 
-   118                              <1> 		
-   119                              <1> 
-   120                              <1> serialLoop:
-   121 00000290 B043                <1> 			mov	al,'C'
-   122 00000292 E8CDFF              <1> 			call UART_TX
-   123                              <1> ;			mov	cx, 0xff
-   124                              <1> ;			call basicDelay
-   125 00000295 EBF9                <1> 			jmp serialLoop
-   126                              <1> 
-   127 00000297 C3                  <1> 			ret
-   128                              <1> 	
+    88 000001B4 E4FD                <1> 			IN	AL,	uart_LSR		; Get the line status register
+    89 000001B6 2460                <1> 			AND AL, 0x60			; Check for TX empty
+    90 000001B8 750C                <1> 			JNZ	OUT_UART_TX			; If set, then TX is empty, goto transmit
+    91 000001BA B9FF17              <1> 			mov	cx, 0x17ff
+    92 000001BD E82900              <1> 			call basicDelay
+    93 000001C0 4B                  <1> 			DEC	BX
+    94 000001C1 75F1                <1> 			JNZ LOOP_UART_TX		; Otherwise loop
+    95 000001C3 58                  <1> 			POP	AX					; We've timed out at this point so
+    96 000001C4 F8                  <1> 			CLC						; Clear the carry flag and preserve AX
+    97 000001C5 C3                  <1> 			RET
+    98                              <1> OUT_UART_TX:
+    99 000001C6 58                  <1> 			POP	AX					; Good to send at this point, so		
+   100 000001C7 E6F8                <1> 			OUT	uart_tx_rx,AL		; Write the character to the UART transmit buffer
+   101 000001C9 B9FF17              <1> 			mov	cx, 0x17ff
+   102 000001CC E81A00              <1> 			call basicDelay
+   103 000001CF F9                  <1> 			STC						; Set carry flag
+   104 000001D0 C3                  <1> 			RET
+   105                              <1> ;print
+   106                              <1> ;parameters:
+   107                              <1> ;          bx = message address
+   108                              <1> ;
+   109                              <1> print:
+   110 000001D1 3E8A07              <1>         	mov  al,byte ds:[bx]
+   111 000001D4 3C00                <1>         	cmp  al,0h
+   112 000001D6 7408                <1>         	jz   fimPrint
+   113                              <1> cont:
+   114 000001D8 E8D5FF              <1> 			CALL UART_TX
+   115 000001DB 73FB                <1> 			jnc cont
+   116                              <1>         	;OUT	uart_tx_rx,AL
+   117 000001DD 43                  <1>         	inc  bx
+   118 000001DE EBF1                <1>         	jmp  print
+   119 000001E0 C3                  <1> fimPrint:   ret
+   120                              <1> 
+   121                              <1> 		
+   122                              <1> 
+   123                              <1> serialLoop:
+   124 000001E1 B043                <1> 			mov	al,'C'
+   125 000001E3 E8CAFF              <1> 			call UART_TX
+   126                              <1> ;			mov	cx, 0xff
+   127                              <1> ;			call basicDelay
+   128 000001E6 EBF9                <1> 			jmp serialLoop
    129                              <1> 
-   249                                  
-   250 00000298 FF<rep 1D58h>                   setloc	0FFF0h			; Power-On Entry Point
-   250          ******************       warning: Inserting 7512 bytes [-w+user]
-   251                                  reset:
-   252 00001FF0 EA[0000]00F0                    jmp 0xF000:init
-   253                                  
-   254                                          setloc	0FFF5h			; ROM Date in ASCII
-   255 00001FF5 32322F31302F3234                db	DATE			; BIOS release date MM/DD/YY
-   256 00001FFD 20                              db	20h
-   257                                  
-   258                                          setloc	0FFFEh			; System Model byte
-   259 00001FFE FE                              db	MODEL_BYTE
-   260 00001FFF FF                              db	0ffh
+   130 000001E8 C3                  <1> 			ret
+   131                              <1> 	
+   132                              <1> basicDelay:
+   133 000001E9 49                  <1>         dec cx
+   134 000001EA 75FD                <1>         jnz basicDelay
+   135 000001EC C3                  <1>         ret
+   135                                  %include "DRVLCD20X04_8088.asm"	
+     1                              <1>         CPU 8086
+     2                              <1>         BITS 16
+     3                              <1> LCD_CMD     EQU 0x80
+     4                              <1> LCD_DATA    EQU 0x81
+     5                              <1> ;// commands
+     6                              <1> LCD_CLEARDISPLAY   EQU 0x01
+     7                              <1> LCD_RETURNHOME     EQU 0x02
+     8                              <1> LCD_ENTRYMODESET   EQU 0x04
+     9                              <1> LCD_DISPLAYCONTROL EQU 0x08
+    10                              <1> LCD_CURSORSHIFT    EQU 0x10
+    11                              <1> LCD_FUNCTIONSET    EQU 0x20
+    12                              <1> LCD_SETCGRAMADDR   EQU 0x40
+    13                              <1> LCD_SETDDRAMADDR   EQU 0x80
+    14                              <1> 
+    15                              <1> printAL:
+    16 000001ED E681                <1>         out LCD_DATA, al
+    17 000001EF B90016              <1>         mov cx, 0x1600
+    18 000001F2 E8F4FF              <1>         call basicDelay
+    19 000001F5 C3                  <1>         ret
+    20                              <1> 
+    21                              <1> printAX:
+    22 000001F6 E681                <1>         out LCD_DATA, al
+    23 000001F8 B90016              <1>         mov cx, 0x1600
+    24 000001FB E8EBFF              <1>         call basicDelay
+    25 000001FE 88E0                <1>         mov al,ah
+    26 00000200 BA8100              <1>         mov  dx,LCD_DATA
+    27 00000203 EE                  <1>         out dx, al
+    28 00000204 B90016              <1>         mov cx, 0x1600
+    29 00000207 E8DFFF              <1>         call basicDelay
+    30 0000020A C3                  <1>         ret
+    31                              <1> 
+    32                              <1> printstr:
+    33 0000020B 3E8A07              <1>         mov al,byte ds:[bx]
+    34 0000020E 3C00                <1>         cmp al,0h
+    35 00000210 7406                <1>         jz  fim
+    36 00000212 E8D8FF              <1>         call printAL
+    37 00000215 43                  <1>         inc bx
+    38 00000216 EBF3                <1>         jmp printstr
+    39 00000218 C3                  <1> fim:    ret
+    40                              <1> 
+    41                              <1> setCursor:
+    42 00000219 50                  <1>         push AX
+    43 0000021A 30E4                <1>         xor  ah,ah            ; limpa AH
+    44 0000021C BB[5700]            <1>         mov  bx, row          ; pega o endereço do array
+    45 0000021F 01D8                <1>         add  ax,bx            ; soma com o endereco com AL 1000+1 = 1001=40
+    46 00000221 89C3                <1>         mov  bx, ax           ; poe o 1001 no bx
+    47 00000223 3E8A07              <1>         mov  al, byte ds:[bx] ; bl = 40 lido da memoria 1001 em bx
+    48 00000226 88C3                <1>         mov  bl, al
+    49 00000228 58                  <1>         pop  AX               ; resgata AH
+    50 00000229 88D8                <1>         mov  al, bl
+    51 0000022B 00E0                <1>         add  al, ah
+    52 0000022D 0C80                <1>         or   al, LCD_SETDDRAMADDR ;| ( ah + al)
+    53 0000022F E680                <1>         out LCD_CMD, al
+    54 00000231 B90016              <1>         mov cx, 0x1600
+    55 00000234 E8B2FF              <1>         call basicDelay
+    56                              <1> 
+    57 00000237 C3                  <1>         ret
+    58                              <1> setCursor2:
+    59 00000238 B01D                <1>         mov  al, 29
+    60 0000023A 0C80                <1>         or   al, LCD_SETDDRAMADDR ;| ( ah + al)
+    61 0000023C E680                <1>         out LCD_CMD, al
+    62 0000023E B90016              <1>         mov cx, 0x1600
+    63 00000241 E8A5FF              <1>         call basicDelay
+    64 00000244 C3                  <1>         ret
+    65                              <1> 
+    66                              <1> lcdInit:
+    67 00000245 B90048              <1>         mov cx, 0x4800
+    68 00000248 E89EFF              <1>         call basicDelay
+    69                              <1> 
+    70 0000024B B030                <1>         mov al, 0x30
+    71 0000024D E680                <1>         out LCD_CMD, al
+    72                              <1> 
+    73 0000024F B90008              <1>         mov cx, 0x0800
+    74 00000252 E894FF              <1>         call basicDelay
+    75                              <1> 
+    76 00000255 B030                <1>         mov al, 0x30
+    77 00000257 E680                <1>         out LCD_CMD, al
+    78                              <1> 
+    79 00000259 B96001              <1>         mov cx, 0x0160
+    80 0000025C E88AFF              <1>         call basicDelay
+    81                              <1> 
+    82 0000025F B038                <1>         mov al, 0x38    ; function set
+    83 00000261 E680                <1>         out LCD_CMD, al
+    84                              <1> 
+    85 00000263 B90016              <1>         mov cx, 0x1600
+    86 00000266 E880FF              <1>         call basicDelay
+    87                              <1> 
+    88 00000269 B008                <1>         mov al, 0x08    ; display off
+    89 0000026B E680                <1>         out LCD_CMD, al
+    90                              <1> 
+    91 0000026D B90016              <1>         mov cx, 0x1600
+    92 00000270 E876FF              <1>         call basicDelay
+    93                              <1> 
+    94 00000273 B001                <1>         mov al, 0x01    ; clear display
+    95 00000275 E680                <1>         out LCD_CMD, al
+    96                              <1> 
+    97 00000277 B90016              <1>         mov cx, 0x1600
+    98 0000027A E86CFF              <1>         call basicDelay
+    99                              <1> 
+   100 0000027D B002                <1>         mov al, 0x02    ; return home
+   101 0000027F E680                <1>         out LCD_CMD, al
+   102                              <1> 
+   103 00000281 B90016              <1>         mov cx, 0x1600
+   104 00000284 E862FF              <1>         call basicDelay
+   105                              <1> 
+   106 00000287 B006                <1>         mov al, 0x06    ; entry mode set
+   107 00000289 E680                <1>         out LCD_CMD, al
+   108                              <1> 
+   109 0000028B B90016              <1>         mov cx, 0x1600
+   110 0000028E E858FF              <1>         call basicDelay
+   111                              <1> 
+   112 00000291 B00C                <1>         mov al, 0x0c    ; display on, no cursor
+   113 00000293 E680                <1>         out LCD_CMD, al
+   114                              <1> 
+   115 00000295 B90016              <1>         mov cx, 0x1600
+   116 00000298 E84EFF              <1>         call basicDelay
+   117 0000029B C3                  <1>         ret
+   118                              <1> 
+   136                                  %include "serial1.inc"	
+     1                              <1> ;========================================================================
+     2                              <1> ; serial1.inc -  BIOS Serial Port Communication Services (part 1 of 2)
+     3                              <1> ;       INT 14h, function AH=01h
+     4                              <1> ;	INT 14h, function AH=02h
+     5                              <1> ;	detect_serial
+     6                              <1> ;	serial port related definitions and tables
+     7                              <1> ;	- see serial2.inc for other INT 14h functions
+     8                              <1> ;-------------------------------------------------------------------------
+     9                              <1> ;
+    10                              <1> ; Compiles with NASM 2.13.02, might work with other versions
+    11                              <1> ;
+    12                              <1> ; Copyright (C) 2010 - 2023 Sergey Kiselev.
+    13                              <1> ; Provided for hobbyist use on the Xi 8088 and Micro 8088 boards.
+    14                              <1> ;
+    15                              <1> ; This program is free software: you can redistribute it and/or modify
+    16                              <1> ; it under the terms of the GNU General Public License as published by
+    17                              <1> ; the Free Software Foundation, either version 3 of the License, or
+    18                              <1> ; (at your option) any later version.
+    19                              <1> ;
+    20                              <1> ; This program is distributed in the hope that it will be useful,
+    21                              <1> ; but WITHOUT ANY WARRANTY; without even the implied warranty of
+    22                              <1> ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    23                              <1> ; GNU General Public License for more details.
+    24                              <1> ;
+    25                              <1> ; You should have received a copy of the GNU General Public License
+    26                              <1> ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    27                              <1> ;
+    28                              <1> ;=========================================================================
+    29                              <1> 
+    30                              <1> uart_osc	equ	1843200		; 1.8432 MHz is the default UART clock
+    31                              <1> one_sec_timeout equ	33135		; 30.18 us intervals in one second
+    32                              <1> 
+    33                              <1> uart_ier_reg	equ	1		; UART Interrupt Enable Register
+    34                              <1> 
+    35                              <1> uart_lcr_reg	equ	3		; UART Line Control Register
+    36                              <1> uart_lcr_ldiv	equ	80h		; LCR - load divisor bit
+    37                              <1> uart_lcr_wlen	equ	03h		; LCR - word length bits
+    38                              <1> uart_lcr_stop	equ	04h		; LCR - number of stop bits bit
+    39                              <1> uart_lcr_pen	equ	08h		; LCR - parity enable bit
+    40                              <1> uart_lcr_peven	equ	10h		; LCR - parity even bit
+    41                              <1> 
+    42                              <1> uart_mcr_reg	equ	4		; UART Modem Control Register
+    43                              <1> uart_mcr_dtr	equ	1		; MCR - data terminal ready (DTR)
+    44                              <1> uart_mcr_rts	equ	2		; MCR - request to send (RTS)
+    45                              <1> 
+    46                              <1> uart_lsr_reg	equ	5		; UART Line Status Register
+    47                              <1> uart_lsr_dr	equ	1		; LSR - data ready (DR)
+    48                              <1> uart_lsr_thre	equ	20h		; LSR - THR empty (THRE)
+    49                              <1> 
+    50                              <1> uart_msr_reg	equ	6		; UART Modem Status Register
+    51                              <1> uart_msr_cts	equ	10h		; MSR - clear to send (CTS)
+    52                              <1> uart_msr_dsr	equ	20h		; MSR - data set ready (DSR)
+    53                              <1> 
+    54                              <1> uart_err_timeout equ	80h		; timeout error
+    55                              <1> 
+    56                              <1> num_serial	equ	4		; number of serial ports
+    57                              <1> 
+    58                              <1> ;=========================================================================
+    59                              <1> ; int_14_fn01 - Send character
+    60                              <1> ; Input:
+    61                              <1> ;	AH = 01h - function 01h - send character
+    62                              <1> ;	AL = character to send
+    63                              <1> ;	DX = serial port number (0-3)
+    64                              <1> ; Output:
+    65                              <1> ;	AH = line status (see int_14_fn00 for complete description)
+    66                              <1> ;-------------------------------------------------------------------------
+    67                              <1> int_14_fn01:
+    68 0000029C 50                  <1> 	push	ax
+    69 0000029D B003                <1> 	mov	al,(uart_mcr_dtr | uart_mcr_rts) ; set DTR and RTS in MCR:
+    70                              <1> 					; ready to communicate, request to send
+    71 0000029F B730                <1> 	mov	bh,(uart_msr_dsr | uart_msr_cts) ; wait for DSR and CTS in MSR:
+    72                              <1> 					; ready to communicate, clear to send
+    73 000002A1 B320                <1> 	mov	bl,uart_lsr_thre	; and for THRE in LSR:
+    74                              <1> 					; UART is ready to accept new character
+    75 000002A3 E82200              <1> 	call	uart_wait_status
+    76 000002A6 59                  <1> 	pop	cx
+    77 000002A7 7506                <1> 	jnz	int_14_timeout		; timeout, original AL is in CL
+    78 000002A9 88C8                <1> 	mov	al,cl
+    79 000002AB EE                  <1> 	out	dx,al			; sent the character
+    80 000002AC E9B904              <1> 	jmp	int_14_exit
+    81                              <1> 
+    82                              <1> int_14_timeout:
+    83 000002AF 88C8                <1> 	mov	al,cl			; original AL saved in CL, restore it
+    84 000002B1 80CC80              <1> 	or	ah,uart_err_timeout	; set timeout bit
+    85 000002B4 E9B104              <1> 	jmp	int_14_exit
+    86                              <1> 
+    87                              <1> ;=========================================================================
+    88                              <1> ; int_14_fn02 - Receive character
+    89                              <1> ; Input:
+    90                              <1> ;	AH = 02h - function 02h - receive character
+    91                              <1> ;	DX = serial port number (0-3)
+    92                              <1> ; Output:
+    93                              <1> ;	AL = character received
+    94                              <1> ;	AH = line status (see int_14_fn00 for complete description)
+    95                              <1> ;-------------------------------------------------------------------------
+    96                              <1> int_14_fn02:
+    97 000002B7 50                  <1> 	push	ax
+    98 000002B8 B001                <1> 	mov	al,uart_mcr_dtr		; set DTR in MCR:
+    99                              <1> 					; ready to communicate
+   100 000002BA B720                <1> 	mov	bh,uart_msr_dsr		; wait for DSR in MSR:
+   101                              <1> 					; ready to communicate
+   102 000002BC B301                <1> 	mov	bl,uart_lsr_dr		; and for DT in LSR:
+   103                              <1> 					; UART has received a character
+   104 000002BE E80700              <1> 	call	uart_wait_status
+   105 000002C1 59                  <1> 	pop	cx
+   106 000002C2 75EB                <1> 	jnz	int_14_timeout
+   107 000002C4 EC                  <1> 	in	al,dx			; receive the character
+   108 000002C5 E9A004              <1> 	jmp	int_14_exit
+   109                              <1> 
+   110                              <1> ;=========================================================================
+   111                              <1> ; uart_wait_status - wait for modem and line status
+   112                              <1> ; Input:
+   113                              <1> ;	AL = value to write to MCR (Modem Control Register)
+   114                              <1> ;	BH = mask to wait for in MSR (Modem Status Register)
+   115                              <1> ;	BL = mask to wait for in LSR (Line Status Register)
+   116                              <1> ;	DX = UART base address
+   117                              <1> ;	SI = address of the timeout value (in seconds)
+   118                              <1> ; Output:
+   119                              <1> ;	AH = line status
+   120                              <1> ;	ZF = 0 - timeout
+   121                              <1> ;	CX,BX - destroyed
+   122                              <1> ;-------------------------------------------------------------------------
+   123                              <1> uart_wait_status:
+   124 000002C8 52                  <1> 	push	dx
+   125 000002C9 83C204              <1> 	add	dx,uart_mcr_reg		; DX = UART MCR address
+   126 000002CC EE                  <1> 	out	dx,al			; output MCR value
+   127 000002CD 42                  <1> 	inc	dx
+   128 000002CE 42                  <1> 	inc	dx			; DX = UART MSR address
+   129                              <1> 					; OPTIMIZATION:
+   130                              <1> 					; uart_msr_reg = uart_mcr_reg + 2
+   131 000002CF E80A00              <1> 	call	wait_for_port		; wait for MSR status
+   132 000002D2 7506                <1> 	jnz	.wait_exit
+   133 000002D4 4A                  <1> 	dec	dx			; DX = UART LSR address
+   134                              <1> 					; OPTIMIZATION:
+   135                              <1> 					; uart_lsr_reg = uart_msr_reg - 1
+   136 000002D5 88DF                <1> 	mov	bh,bl			; BH = LSR mask
+   137 000002D7 E80200              <1> 	call	wait_for_port		; wait for LSR status
+   138                              <1> .wait_exit:
+   139 000002DA 5A                  <1> 	pop	dx
+   140 000002DB C3                  <1> 	ret
+   141                              <1> 
+   142                              <1> ;=========================================================================
+   143                              <1> ; wait_for_port - wait for set bits in a register
+   144                              <1> ;
+   145                              <1> ; Input:
+   146                              <1> ;	BH = mask to wait for (bits that need to be 1)
+   147                              <1> ;	DX = register address
+   148                              <1> ;	SI = address of the timeout value (in seconds)
+   149                              <1> ; Output:
+   150                              <1> ;	AH = last port reading
+   151                              <1> ;	ZF clear on timeout
+   152                              <1> ;	ZF set on success
+   153                              <1> ;	AL - trashed
+   154                              <1> ;	CX - trashed
+   155                              <1> ;-------------------------------------------------------------------------
+   156                              <1> wait_for_port:
+   157                              <1> 
+   158 000002DC 53                  <1> 	push	bx
+   159 000002DD 8A1C                <1> 	mov	bl,byte [SI]		; get the timeout value in seconds
+   160                              <1> 
+   161                              <1> .loop_outer:
+   162 000002DF B96F81              <1> 	mov	cx,one_sec_timeout	; 30.18 us intervals in one second
+   163                              <1> 
+   164                              <1> .loop_inner:
+   165 000002E2 EC                  <1> 	in	al,dx			; read the register
+   166 000002E3 88C4                <1> 	mov	ah,al			; save register in AH
+   167 000002E5 20F8                <1> 	and	al,bh
+   168 000002E7 38F8                <1> 	cmp	al,bh			; required bits are set?
+   169 000002E9 740E                <1> 	je	.exit
+   170                              <1> 
+   171                              <1> %ifdef AT_DELAY
+   172                              <1> 
+   173                              <1> .zero_loop:
+   174                              <1> 	in	al,ppi_pb_reg
+   175                              <1> 	test	al,refresh_flag
+   176                              <1> 	jz	.zero_loop		; wait 15.09 us
+   177                              <1> 
+   178                              <1> .one_loop:
+   179                              <1> 	in	al,ppi_pb_reg
+   180                              <1> 	test	al,refresh_flag
+   181                              <1> 	jnz	.one_loop		; wait 15.09 us
+   182                              <1> 
+   183                              <1> %else ; AT_DELAY
+   184                              <1> 
+   185                              <1> 	; wait 30.17 us (Intel 8088 CPU running on 4.77 MHz)
+   186 000002EB B008                <1>         mov     al,8
+   187                              <1> .delay_loop:
+   188 000002ED FEC8                <1>         dec     al
+   189 000002EF 75FC                <1>         jnz     .delay_loop
+   190                              <1> 
+   191                              <1> %endif ; AT_DELAY
+   192                              <1> 
+   193 000002F1 E2EF                <1> 	loop	.loop_inner
+   194                              <1> 
+   195 000002F3 FECB                <1> 	dec	bl
+   196 000002F5 75E8                <1> 	jnz	.loop_outer
+   197 000002F7 08FF                <1> 	or	bh,bh			; timeout set ZF = 0 (BH != 0)
+   198                              <1> 
+   199                              <1> .exit:
+   200 000002F9 5B                  <1> 	pop	bx
+   201 000002FA C3                  <1> 	ret
+   202                              <1> 
+   203                              <1> ;=========================================================================
+   204                              <1> ; detect_serial - detect and print serial ports
+   205                              <1> ; Input:
+   206                              <1> ;	none
+   207                              <1> ; Output:
+   208                              <1> ;	none (updates BIOS data area)
+   209                              <1> ;-------------------------------------------------------------------------
+   210                              <1> detect_serial:
+   211 000002FB 50                  <1> 	push	ax
+   212 000002FC 53                  <1> 	push	bx
+   213 000002FD 52                  <1> 	push	dx
+   214 000002FE 56                  <1> 	push	si
+   215                              <1> 	mov	al,e_serial_scan
+   215          ******************  <1>  error: symbol `e_serial_scan' not defined
+   216                              <1> 	out	post_reg,al
+   216          ******************  <1>  error: symbol `post_reg' not defined
+   217                              <1> 
+   218                              <1> 	mov	si,msg_serial
+   218          ******************  <1>  error: symbol `msg_serial' not defined
+   219 000002FF E8CFFE              <1> 	call	print
+   220 00000302 BB0101              <1> 	mov	bx,0101h		; the default timeout is 1 sec
+   221                              <1> 	mov	word [serial_timeout],bx   ; initialize timeout values
+   221          ******************  <1>  error: symbol `serial_timeout' not defined
+   222                              <1> 	mov	word [serial_timeout+2],bx ; for all 4 ports
+   222          ******************  <1>  error: symbol `serial_timeout' not defined
+   223 00000305 31DB                <1> 	xor	bx,bx			; BX = 0
+   224                              <1> .detect_loop:
+   225                              <1> 	mov	si,msg_serial_com
+   225          ******************  <1>  error: symbol `msg_serial_com' not defined
+   226 00000307 E8C7FE              <1> 	call	print
+   227 0000030A 88D8                <1> 	mov	al,bl
+   228 0000030C D0E8                <1> 	shr	al,1
+   229 0000030E FEC0                <1> 	inc	al			; AL = COM port number (1..4)
+   230                              <1> 	call	print_digit
+   230          ******************  <1>  error: symbol `print_digit' not defined
+   231                              <1> 	mov	si,msg_colon
+   231          ******************  <1>  error: symbol `msg_colon' not defined
+   232 00000310 E8BEFE              <1> 	call	print
+   233 00000313 2E8B97[8103]        <1>     cs	mov	dx,word [uart_ier_regs+bx] ; DX = UART IER address
+   234 00000318 EC                  <1> 	in	al,dx
+   235 00000319 B00F                <1> 	mov	al,0Fh
+   236 0000031B EE                  <1> 	out	dx,al			; enable interrupts
+   237 0000031C B000                <1> 	mov	al,00h
+   238                              <1> 	out	unused_reg,al		; clear ISA data bus floating signals
+   238          ******************  <1>  error: symbol `unused_reg' not defined
+   239 0000031E EC                  <1> 	in	al,dx			; get interrupt enable register to AL
+   240 0000031F 3C0F                <1> 	cmp	al,0Fh
+   241 00000321 7538                <1> 	jne	.no_port		; no port at this address
+   242 00000323 B000                <1> 	mov	al,00h
+   243 00000325 EE                  <1> 	out	dx,al			; disable interrupts
+   244 00000326 B0FF                <1> 	mov	al,0FFh
+   245                              <1> 	out	unused_reg,al		; set ISA data bus floating signals
+   245          ******************  <1>  error: symbol `unused_reg' not defined
+   246 00000328 EC                  <1> 	in	al,dx			; get interrupt enable register to AL
+   247 00000329 3C00                <1> 	cmp	al,00h
+   248 0000032B 752E                <1> 	jne	.no_port		; no port at this address
+   249 0000032D 4A                  <1> 	dec	dx			; DX = UART base address
+   250                              <1> 					; OPTIMIZATION:
+   251                              <1> 					; uart_base = uart_ier_reg - 1
+   252                              <1> 	mov	word [equip_serial+bx],dx ; store port address to the BIOS
+   252          ******************  <1>  error: symbol `equip_serial' not defined
+   253                              <1> 					; data area
+   254                              <1> 	add	word [equipment_list],0200h ; increment number of serial ports
+   254          ******************  <1>  error: symbol `equipment_list' not defined
+   255 0000032E 89D0                <1> 	mov	ax,dx
+   256                              <1> 	call	print_hex
+   256          ******************  <1>  error: symbol `print_hex' not defined
+   257 00000330 EB35                <1> 	jmp	.next
+   258                              <1> 
+   259                              <1> .no_port:
+   260                              <1> 	mov	word [equip_serial+bx],0 ; no port
+   260          ******************  <1>  error: symbol `equip_serial' not defined
+   261                              <1> 	mov	si,msg_none
+   261          ******************  <1>  error: symbol `msg_none' not defined
+   262 00000332 E89CFE              <1> 	call	print
+   263                              <1> 	
+   264                              <1> .next:
+   265 00000335 43                  <1> 	inc	bx
+   266 00000336 43                  <1> 	inc	bx
+   267 00000337 83FB08              <1> 	cmp	bx,(num_serial << 1)	; all serial ports have been scanned?
+   268 0000033A 743A                <1> 	je	.done
+   269                              <1> 	mov	si,msg_semicolon
+   269          ******************  <1>  error: symbol `msg_semicolon' not defined
+   270 0000033C E892FE              <1> 	call	print
+   271 0000033F EBC6                <1> 	jmp	.detect_loop
+   272                              <1> 
+   273                              <1> .done:
+   274                              <1> 	mov	si,msg_crlf
+   274          ******************  <1>  error: symbol `msg_crlf' not defined
+   275 00000341 E88DFE              <1> 	call	print
+   276                              <1> 
+   277 00000344 5E                  <1> 	pop	si
+   278 00000345 5A                  <1> 	pop	dx
+   279 00000346 5B                  <1> 	pop	bx
+   280 00000347 58                  <1> 	pop	ax
+   281 00000348 C3                  <1> 	ret
+   282                              <1> 
+   283                              <1> ;-------------------------------------------------------------------------
+   284                              <1> ; serial port Interrupt Enable Register addresses - used for port detection
+   285 00000349 F903F902            <1> uart_ier_regs	dw	(3F8h + uart_ier_reg), (2F8h + uart_ier_reg)
+   286 0000034D E903E902            <1> 		dw	(3E8h + uart_ier_reg), (2E8h + uart_ier_reg)
+   287                              <1> 
+   288                              <1> ;-------------------------------------------------------------------------
+   289                              <1> ; UART divisor values table
+   290 00000351 1704                <1> uart_divisors	dw	uart_osc/16/110		; 110 bps
+   291 00000353 0003                <1> 		dw	uart_osc/16/150		; 150 bps
+   292 00000355 8001                <1> 		dw	uart_osc/16/300		; 300 bps
+   293 00000357 C000                <1> 		dw	uart_osc/16/600		; 600 bps
+   294 00000359 6000                <1> 		dw	uart_osc/16/1200	; 1200 bps
+   295 0000035B 3000                <1> 		dw	uart_osc/16/2400	; 2400 bps
+   296 0000035D 1800                <1> 		dw	uart_osc/16/4800	; 4800 bps
+   297 0000035F 0C00                <1> 		dw	uart_osc/16/9600	; 9600 bps
+   298 00000361 0600                <1> 		dw	uart_osc/16/19200	; 19200 bps
+   299 00000363 0300                <1> 		dw	uart_osc/16/38400	; 38400 bps
+   300 00000365 0200                <1> 		dw	uart_osc/16/57600	; 57600 bps
+   301 00000367 0100                <1> 		dw	uart_osc/16/115200	; 115200 bps
+   302                              <1> num_divisors	equ ($-uart_divisors)/2
+   137                                  %include "serial2.inc"	
+     1                              <1> ;========================================================================
+     2                              <1> ; serial2.inc -  BIOS Serial Port Communication Services (part 2 of 2)
+     3                              <1> ;       INT 14h, function AH=00h
+     4                              <1> ;       INT 14h, function AH=03h
+     5                              <1> ;       INT 14h, function AH=04h
+     6                              <1> ;       INT 14h, function AH=05h
+     7                              <1> ;	- see serial1.inc for other INT 14h functions
+     8                              <1> ;-------------------------------------------------------------------------
+     9                              <1> ;
+    10                              <1> ; Compiles with NASM 2.13.02, might work with other versions
+    11                              <1> ;
+    12                              <1> ; Copyright (C) 2010 - 2023 Sergey Kiselev.
+    13                              <1> ; Provided for hobbyist use on the Xi 8088 and Micro 8088 boards.
+    14                              <1> ;
+    15                              <1> ; This program is free software: you can redistribute it and/or modify
+    16                              <1> ; it under the terms of the GNU General Public License as published by
+    17                              <1> ; the Free Software Foundation, either version 3 of the License, or
+    18                              <1> ; (at your option) any later version.
+    19                              <1> ;
+    20                              <1> ; This program is distributed in the hope that it will be useful,
+    21                              <1> ; but WITHOUT ANY WARRANTY; without even the implied warranty of
+    22                              <1> ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    23                              <1> ; GNU General Public License for more details.
+    24                              <1> ;
+    25                              <1> ; You should have received a copy of the GNU General Public License
+    26                              <1> ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    27                              <1> ;
+    28                              <1> ;=========================================================================
+    29                              <1> 
+    30                              <1> ;=========================================================================
+    31                              <1> ; int_14 - BIOS Serial Port Communication Services
+    32                              <1> ;-------------------------------------------------------------------------
+    33 00000369 FF<rep 3C0h>        <1> 	setloc	0E729h			; INT 14 Entry Point
+    33          ******************  <1>  warning: Inserting 960 bytes [-w+user]
+    34                              <1> int_14:
+    35 00000729 FB                  <1> 	sti
+    36 0000072A 51                  <1> 	push	cx
+    37 0000072B 52                  <1> 	push	dx
+    38 0000072C 56                  <1> 	push	si
+    39 0000072D 1E                  <1> 	push	ds
+    40 0000072E 53                  <1> 	push	bx
+    41 0000072F BB4000              <1> 	mov	bx,biosdseg
+    42 00000732 8EDB                <1> 	mov	ds,bx
+    43 00000734 80FC06              <1> 	cmp	ah,.max/2
+    44 00000737 732D                <1> 	jae	int_14_error		; invalid function number specified
+    45 00000739 83FA04              <1> 	cmp	dx,num_serial
+    46 0000073C 7328                <1> 	jae	int_14_error		; invalid port number specified
+    47                              <1> 	mov	si,serial_timeout	; serial port timeout setting in BDA
+    47          ******************  <1>  error: symbol `serial_timeout' not defined
+    48 0000073E 01D6                <1> 	add	si,dx			; [SI] = timeout for the selected port
+    49 00000740 89D3                <1> 	mov	bx,dx
+    50 00000742 D1E3                <1> 	shl	bx,1
+    51                              <1> 	mov	dx,word [equip_serial+bx] ; DX = serial port address
+    51          ******************  <1>  error: symbol `equip_serial' not defined
+    52 00000744 09D2                <1> 	or	dx,dx
+    53 00000746 741E                <1> 	jz	int_14_error		; specified port is not installed
+    54 00000748 B700                <1> 	mov	bh,0
+    55 0000074A 88E3                <1> 	mov	bl,ah
+    56 0000074C D1E3                <1> 	shl	bx,1
+    57 0000074E 2EFFA7[5A07]        <1>     cs	jmp	near [.dispatch+bx]
+    58                              <1> .dispatch:
+    59 00000753 [6E07]              <1> 	dw	int_14_fn00
+    60 00000755 [9C02]              <1> 	dw	int_14_fn01
+    61 00000757 [B702]              <1> 	dw	int_14_fn02
+    62 00000759 [A307]              <1> 	dw	int_14_fn03
+    63 0000075B [AD07]              <1> 	dw	int_14_fn04
+    64 0000075D [0708]              <1> 	dw	int_14_fn05
+    65                              <1> .max	equ	$-.dispatch
+    66                              <1> 
+    67                              <1> int_14_error:
+    68 0000075F 31C0                <1> 	xor	ax,ax
+    69                              <1> 
+    70                              <1> int_14_exit:
+    71 00000761 5B                  <1> 	pop	bx
+    72 00000762 1F                  <1> 	pop	ds
+    73 00000763 5E                  <1> 	pop	si
+    74 00000764 5A                  <1> 	pop	dx
+    75 00000765 59                  <1> 	pop	cx
+    76 00000766 CF                  <1> 	iret
+    77                              <1> 
+    78                              <1> ;=========================================================================
+    79                              <1> ; int_14_fn00 - Initialize serial port
+    80                              <1> ; Input:
+    81                              <1> ;	AH = 0 - function 00h - initialize serial port
+    82                              <1> ;	AL - initialization parameters
+    83                              <1> ;		bit 1,0	= 10	- 7 data bits
+    84                              <1> ;			= 11	- 8 data bits
+    85                              <1> ;		bit 2	= 0	- 1 stop bit
+    86                              <1> ;			= 1	- 2 stop bits
+    87                              <1> ;		bit 3	= 0	- parity disable
+    88                              <1> ;			= 1	- parity enable
+    89                              <1> ;		bit 4	= 0	- odd parity (if parity enabled)
+    90                              <1> ;			= 1	- even parity (if parity enabled)
+    91                              <1> ;		bit 7-5 = 000	- 110 bps
+    92                              <1> ;			= 001	- 150 bps
+    93                              <1> ;			= 010	- 300 bps
+    94                              <1> ;			= 011	- 600 bps
+    95                              <1> ;			= 100	- 1200 bps
+    96                              <1> ;			= 101	- 2400 bps
+    97                              <1> ;			= 110	- 4800 bps
+    98                              <1> ;			= 111	- 9600 bps
+    99                              <1> ;	DX = serial port number (0-3)
+   100                              <1> ; Output:
+   101                              <1> ;	AL = modem status
+   102                              <1> ;		bit 0	= 1	- delta clear to send
+   103                              <1> ;		bit 1	= 1	- delta data set ready
+   104                              <1> ;		bit 2	= 1	- trailing edge ring indicator
+   105                              <1> ;		bit 3	= 1	- delta data carrier detect
+   106                              <1> ;		bit 4	= 1	- clear to send
+   107                              <1> ;		bit 5	= 1	- data set ready
+   108                              <1> ;		bit 6	= 1	- ring indicator
+   109                              <1> ;		bit 7	= 1	- data carrier detect
+   110                              <1> ;	AH = line status
+   111                              <1> ;		bit 0	= 1	- data ready
+   112                              <1> ;		bit 1	= 1	- overrun error
+   113                              <1> ;		bit 2	= 1	- parity error
+   114                              <1> ;		bit 3	= 1	- framing error
+   115                              <1> ;		bit 4	= 1	- break interrupt
+   116                              <1> ;		bit 5	= 1	- transmitter holding register
+   117                              <1> ;		bit 6	= 1	- transmitter empty
+   118                              <1> ;		bit 7	= 1	- error in RCVR FIFO
+   119                              <1> ;-------------------------------------------------------------------------
+   120                              <1> int_14_fn00:
+   121 00000767 88C4                <1> 	mov	ah,al			; save AL to AH
+   122 00000769 83C203              <1> 	add	dx,uart_lcr_reg		; DX = UART LCR address
+   123 0000076C B080                <1> 	mov	al,uart_lcr_ldiv	; AL = LCR load divisor bit
+   124 0000076E EE                  <1> 	out	dx,al
+   125 0000076F 31DB                <1> 	xor	bx,bx
+   126 00000771 88E3                <1> 	mov	bl,ah
+   127 00000773 80E3E0              <1> 	and	bl,0E0h			; get divisor bits from init params
+   128 00000776 D0EB                <1> 	shr	bl,1
+   129 00000778 D0EB                <1> 	shr	bl,1
+   130 0000077A D0EB                <1> 	shr	bl,1
+   131 0000077C D0EB                <1> 	shr	bl,1
+   132 0000077E 2E8B9F[5103]        <1>     cs	mov	bx,word [uart_divisors+bx] ; get the divisor value
+   133 00000783 83EA03              <1> 	sub	dx,uart_lcr_reg		; DX = UART base address
+   134 00000786 88D8                <1> 	mov	al,bl
+   135 00000788 EE                  <1> 	out	dx,al			; output divisor - low byte
+   136 00000789 42                  <1> 	inc	dx			; DX = UART base address + 1
+   137 0000078A 88F8                <1> 	mov	al,bh
+   138 0000078C EE                  <1> 	out	dx,al			; output divisor - high byte
+   139 0000078D 42                  <1> 	inc	dx
+   140 0000078E 42                  <1> 	inc	dx			; DX = UART LCR address
+   141 0000078F 88E0                <1> 	mov	al,ah			; AL = initialization parameters
+   142 00000791 241F                <1> 	and	al,(uart_lcr_wlen | uart_lcr_stop | uart_lcr_pen | uart_lcr_peven)
+   143                              <1> 					; get control bits
+   144 00000793 EE                  <1> 	out	dx,al			; set LCR
+   145 00000794 4A                  <1> 	dec	dx
+   146 00000795 4A                  <1> 	dec	dx			; DX = UART IER address
+   147                              <1> 					; OPTIMIZATION:
+   148                              <1> 					; uart_ier_reg = uart_lcr_reg - 2
+   149 00000796 B000                <1> 	mov	al,0
+   150 00000798 EE                  <1> 	out	dx,al			; disable interrupts
+   151 00000799 4A                  <1> 	dec	dx			; DX = UART base address
+   152                              <1> 					; OPTIMIZATION:
+   153                              <1> 					; uart_base = uart_ier_reg - 1
+   154 0000079A EB07                <1> 	jmp	int_14_fn03		; exit returning modem and line status
+   155                              <1> 
+   156                              <1> ;=========================================================================
+   157                              <1> ; int_14_fn03 - Return serial port status
+   158                              <1> ; Input:
+   159                              <1> ;	AH = 03h - function 03h - return serial port status
+   160                              <1> ;	DX = serial port number (0-3)
+   161                              <1> ; Output:
+   162                              <1> ;	AL = modem status (see int_14_fn00 for complete description)
+   163                              <1> ;	AH = line status (see int_14_fn00 for complete description)
+   164                              <1> ;-------------------------------------------------------------------------
+   165                              <1> int_14_fn03:
+   166 0000079C 83C205              <1> 	add	dx,uart_lsr_reg		; DX = UART LSR address
+   167 0000079F EC                  <1> 	in	al,dx
+   168 000007A0 88C4                <1> 	mov	ah,al
+   169 000007A2 42                  <1> 	inc	dx			; DX = UART MSR address
+   170 000007A3 EC                  <1> 	in	al,dx
+   171 000007A4 EBBB                <1> 	jmp	int_14_exit
+   172                              <1> 
+   173                              <1> ;=========================================================================
+   174                              <1> ; int_14_fn04 - Extended initialize serial port
+   175                              <1> ; Input:
+   176                              <1> ;	AH = 04h - function 04h - extended initialize serial port
+   177                              <1> ;	AL - break status:
+   178                              <1> ;		00h = no break
+   179                              <1> ;		01h = break
+   180                              <1> ;	BH - parity:
+   181                              <1> ;		00h = no parity
+   182                              <1> ;		01h = odd parity
+   183                              <1> ;		02h = even parity
+   184                              <1> ;		03h = stick parity odd
+   185                              <1> ;		04h = stick parity even
+   186                              <1> ;	BL - stop bits:
+   187                              <1> ;		00h = 1 stop bit
+   188                              <1> ;		01h = 2 stop bits (or 1.5 stop bits for 5 bit word length)
+   189                              <1> ;	CH - word length:
+   190                              <1> ;		00h = 5 bits
+   191                              <1> ;		01h = 6 bits
+   192                              <1> ;		02h = 7 bits
+   193                              <1> ;		03h = 8 bits
+   194                              <1> ;	CL - bps rate:
+   195                              <1> ;		00h = 110 bps
+   196                              <1> ;		01h = 150 bps
+   197                              <1> ;		02h = 300 bps
+   198                              <1> ;		03h = 600 bps
+   199                              <1> ;		04h = 1200 bps
+   200                              <1> ;		05h = 2400 bps
+   201                              <1> ;		06h = 6000 bps
+   202                              <1> ;		07h = 9600 bps
+   203                              <1> ;		08h = 19200 bps
+   204                              <1> ;		09h = 38400 bps
+   205                              <1> ;		0Ah = 57600 bps
+   206                              <1> ;		0Bh = 115200 bps
+   207                              <1> ;	DX = serial port number (0-3)
+   208                              <1> ; Output:
+   209                              <1> ;	AL = modem status (see int_14_fn00 for complete description)
+   210                              <1> ;	AH = line status (see int_14_fn00 for complete description)
+   211                              <1> ;-------------------------------------------------------------------------
+   212                              <1> int_14_fn04:
+   213 000007A6 88C4                <1> 	mov	ah,al			; save AL to AH
+   214 000007A8 80F90C              <1> 	cmp	cl,num_divisors
+   215 000007AB 73EF                <1> 	jae	int_14_fn03		; invalid divisor value
+   216                              <1> 					; exit returning modem and line status
+   217 000007AD 83C203              <1> 	add	dx,uart_lcr_reg		; DX = UART LCR address
+   218 000007B0 B080                <1> 	mov	al,uart_lcr_ldiv	; AL = LCR load divisor bit
+   219 000007B2 EE                  <1> 	out	dx,al
+   220 000007B3 31DB                <1> 	xor	bx,bx
+   221 000007B5 88CB                <1> 	mov	bl,cl			; get divisor number from parameters
+   222 000007B7 D0E3                <1> 	shl	bl,1			; index to the word table
+   223 000007B9 2E8B9F[5103]        <1>     cs	mov	bx,word [uart_divisors+bx] ; get the divisor value
+   224 000007BE 83EA03              <1> 	sub	dx,uart_lcr_reg		; DX = UART base address
+   225 000007C1 88D8                <1> 	mov	al,bl
+   226 000007C3 EE                  <1> 	out	dx,al			; output divisor - low byte
+   227 000007C4 42                  <1> 	inc	dx			; DX = UART base address + 1
+   228 000007C5 88F8                <1> 	mov	al,bh
+   229 000007C7 EE                  <1> 	out	dx,al			; output divisor - high byte
+   230 000007C8 42                  <1> 	inc	dx
+   231 000007C9 42                  <1> 	inc	dx			; DX = UART LCR address
+   232                              <1> 
+   233 000007CA 80E401              <1> 	and	ah,01h			; break setting (mask defined bits)
+   234 000007CD 88E0                <1> 	mov	al,ah			; add it to AL (LCR setting)
+   235                              <1> 
+   236 000007CF D0E0                <1> 	shl	al,1
+   237 000007D1 D0E0                <1> 	shl	al,1
+   238 000007D3 D0E0                <1> 	shl	al,1			; make place for parity settings
+   239                              <1> 	
+   240 000007D5 5B                  <1> 	pop	bx			; get original BX value from the stack
+   241 000007D6 53                  <1> 	push	bx			; push it back to the stack
+   242                              <1> 
+   243 000007D7 80FF01              <1> 	cmp	bh,1			; parity setting
+   244 000007DA 7610                <1> 	jbe	.set_parity		; no parity or odd parity
+   245 000007DC FECF                <1> 	dec	bh
+   246 000007DE 80E703              <1> 	and	bh,03h			; get the valid bits only
+   247 000007E1 D0E7                <1> 	shl	bh,1
+   248 000007E3 FEC7                <1> 	inc	bh			; 010 -> 011, 011 -> 101, 100 -> 111
+   249                              <1> 
+   250                              <1> .set_parity:
+   251 000007E5 08F8                <1> 	or	al,bh			; add it to AL (LCR setting)
+   252                              <1> 
+   253 000007E7 D0E0                <1> 	shl	al,1			; make place for stop bit setting
+   254                              <1> 	
+   255 000007E9 80E301              <1> 	and	bl,01h			; get stop bits (defined bit only)
+   256 000007EC 08D8                <1> 	or	al,bl			; add it to AL (LCR setting)
+   257                              <1> 
+   258 000007EE D0E0                <1> 	shl	al,1
+   259 000007F0 D0E0                <1> 	shl	al,1			; make place for word length setting
+   260                              <1> 
+   261 000007F2 80E503              <1> 	and	ch,03h			; get word length (mask defined bits)
+   262 000007F5 08E8                <1> 	or	al,ch			; add it to AL (LCR setting)
+   263                              <1> 
+   264 000007F7 EE                  <1> 	out	dx,al			; set LCR
+   265 000007F8 4A                  <1> 	dec	dx
+   266 000007F9 4A                  <1> 	dec	dx			; DX = UART IER address
+   267                              <1> 					; OPTIMIZATION:
+   268                              <1> 					; uart_ier_reg = uart_lcr_reg - 2
+   269 000007FA B000                <1> 	mov	al,0
+   270 000007FC EE                  <1> 	out	dx,al			; disable interrupts
+   271 000007FD 4A                  <1> 	dec	dx			; DX = UART base address
+   272                              <1> 					; OPTIMIZATION:
+   273                              <1> 					; uart_base = uart_ier_reg - 1
+   274 000007FE EB9C                <1> 	jmp	int_14_fn03		; exit returning modem and line status
+   275                              <1> 
+   276                              <1> ;=========================================================================
+   277                              <1> ; int_14_fn05 - Extended serial port control
+   278                              <1> ; Input:
+   279                              <1> ;	AH = 05h - function 05h - extended serial port control
+   280                              <1> ;	AL - sub-function:
+   281                              <1> ;		00h = read modem control register
+   282                              <1> ;		01h = write modem control register
+   283                              <1> ;			BL = modem control register
+   284                              <1> ;	DX = serial port number (0-3)
+   285                              <1> ; Output:
+   286                              <1> ;	AX = status	
+   287                              <1> ;	sub-function AL = 00h:
+   288                              <1> ;		BL = modem control register
+   289                              <1> ;-------------------------------------------------------------------------
+   290                              <1> int_14_fn05:
+   291 00000800 2401                <1> 	and	al,01h			; sub-function (get the valid bit)
+   292 00000802 7514                <1> 	jnz	int_14_fn05_01
+   293                              <1> 
+   294                              <1> ;-------------------------------------------------------------------------
+   295                              <1> ; sub-function 00h - read modem control register
+   296                              <1> ; int_14_fn05_00:
+   297 00000804 83C203              <1> 	add	dx,uart_lcr_reg		; DX = UART MCR address
+   298 00000807 EC                  <1> 	in	al,dx
+   299 00000808 5B                  <1> 	pop	bx			; get BX from the stack
+   300 00000809 88C3                <1> 	mov	bl,al			; BL = MCR content
+   301 0000080B 53                  <1> 	push	bx			; put BX back to the stack
+   302 0000080C 83EA03              <1> 	sub	dx,uart_lcr_reg		; DX = UART base address
+   303 0000080F EB8B                <1> 	jmp	int_14_fn03		; exit returning modem and line status
+   304                              <1> 
+   305                              <1> ;-------------------------------------------------------------------------
+   306                              <1> ; sub-function 01h - write modem control register
+   307                              <1> int_14_fn05_01:
+   308 00000811 83C203              <1> 	add	dx,uart_lcr_reg		; DX = UART MCR address
+   309 00000814 5B                  <1> 	pop	bx			; get BX from the stack
+   310 00000815 53                  <1> 	push	bx			; put BX back to the stack
+   311 00000816 88D8                <1> 	mov	al,bl			; BL = new MCR content
+   312 00000818 EE                  <1> 	out	dx,al
+   313 00000819 83EA03              <1> 	sub	dx,uart_lcr_reg		; DX = UART base address
+   314 0000081C E97DFF              <1> 	jmp	int_14_fn03		; exit returning modem and line status
+   138                                  
+   139 0000081F FF<rep 17D1h>                   setloc	0FFF0h			; Power-On Entry Point
+   139          ******************       warning: Inserting 6097 bytes [-w+user]
+   140                                  reset:
+   141 00001FF0 EA[0000]00F0                    jmp 0xF000:init
+   142                                  
+   143                                          setloc	0FFF5h			; ROM Date in ASCII
+   144 00001FF5 32322F31302F3234                db	DATE			; BIOS release date MM/DD/YY
+   145 00001FFD 20                              db	20h
+   146                                  
+   147                                          setloc	0FFFEh			; System Model byte
+   148 00001FFE FE                              db	MODEL_BYTE
+   149 00001FFF FF                              db	0ffh

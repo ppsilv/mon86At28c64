@@ -37,16 +37,16 @@ init:   jmp     init2
            ;12345678901234567890
 msg0    db "8088 - CPU TXM/8 III",0
 msg1    db "Paulo Silva  (c)2024",0
-msg2    db "Mon86 V 1.0.00 2410A",0
+msg2    db "Mon86 V 1.0.00 2443A",0
 msg3    db "1MB dram rom at28c64",0
 row:    db 0, 40, 20, 84, 80
 
 welcome		db	0x1B,"[2JXT 8088 BIOS, Version "
 		db	VERSION
-		db	". "
-		db	"Copyright (C) 2024 - Paulo Silva(pgordao)", 0Dh, 0Ah
-		db	"8088 - CPU TXM/8 III  "
-		db	"Mon86 V 1.0.00 2410A 1MB dram rom at28c64", 0Dh, 0Ah, 0
+		db	". ", 0Dh
+		db	"Paulo Silva(pgordao) - Copyright (C) 2024", 0Dh
+		db	"CPU 8088-2   board TXM/8 III  ", 0Dh
+		db	"Mon86 V ",VERSION ," 2443A 1MB Dram Rom at28c64", 0Dh, 0
 
 init2:
         cli				; disable interrupts
@@ -70,7 +70,7 @@ loopP:
         call UART_RX       
         jnc loopP
         call printch
-        CMP AL, 0x0D
+        CMP AL, 0x0A
         JNZ loopP
         call printPrompt
         jmp loopP

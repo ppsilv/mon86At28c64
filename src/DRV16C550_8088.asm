@@ -121,7 +121,7 @@ println:
 			OUT	DX, AL		; Write the character to the UART transmit buffer
 			mov	cx, 0xff
 			call basicDelay
-			MOV AL, 0x0D
+			MOV AL, 0x0A
 			MOV	DX, uart_tx_rx
 			OUT	DX, AL		; Write the character to the UART transmit buffer
 			mov	CX, 0xff

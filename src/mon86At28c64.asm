@@ -41,11 +41,6 @@ msg2    db "Mon86 V 1.0.00 2410A",0
 msg3    db "1MB dram rom at28c64",0
 row:    db 0, 40, 20, 84, 80
 
-msg10   db "8088 - CPU TXM/8 III",13,10,0
-msg11   db "Paulo Silva  (c)2024",13,10,0
-msg12   db "Mon86 V 1.0.00 2410A",13,10,0
-msg13   db "1MB dram rom at28c64",13,10,0
-
 welcome		db	0x1B,"[2JXT 8088 BIOS, Version "
 		db	VERSION
 		db	". "

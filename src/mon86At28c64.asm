@@ -12,12 +12,15 @@
  times  pad_bytes db 0FFh
 %endif
 %endm
-
+;History
+; 2444 - Version 10.0.01 implemented print2
+; 2444 - Version 10.0.01 fixed erro in UART_TX, no push de BX
+; 2444 - Version 10.0.02 implemented prompt
 
 %define	START		0E000h		; BIOS starts at offset 08000h
 %define DATE		'22/10/24'
 %define MODEL_BYTE	0FEh		; IBM PC/XT
-%define VERSION		'1.0.00'		; BIOS version
+%define VERSION		'1.0.02'	; BIOS version
 
 bioscseg	equ	0F000h
 biosdseg	equ	0040h
@@ -43,10 +46,10 @@ msg11   db "Paulo Silva  (c)2024",13,10,0
 msg12   db "Mon86 V 1.0.00 2410A",13,10,0
 msg13   db "1MB dram rom at28c64",13,10,0
 
-welcome		db	"XT 8088 BIOS, Version "
+welcome		db	0x1B,"[2JXT 8088 BIOS, Version "
 		db	VERSION
 		db	". "
-		db	"Copyright (C) 2024 - 2024 Paulo Silva(pgordao)", 0Dh, 0Ah
+		db	"Copyright (C) 2024 - Paulo Silva(pgordao)", 0Dh, 0Ah
 		db	"8088 - CPU TXM/8 III  "
 		db	"Mon86 V 1.0.00 2410A 1MB dram rom at28c64", 0Dh, 0Ah, 0
 
@@ -61,13 +64,26 @@ init2:
         mov es, sp
 
         call configure_uart
-        mov	bx,welcome
-        call print
+        mov	bx, welcome
+        call print2
 
 
 
 loop:
-        jmp loop
+        call printPrompt
+loopP:
+        call UART_RX       
+        jnc loopP
+        call printch
+        CMP AL, 0x0D
+        JNZ loopP
+        call printPrompt
+        jmp loopP
+        ret
+
+printPrompt:
+        mov al, '>'
+        call printch
         ret
 
 lcdMessage:

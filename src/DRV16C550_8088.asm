@@ -34,7 +34,7 @@ msg0_01:   db "Serial driver for 16C550",0
 ;			
 ;			
 configure_uart:
-			mov cx, 0x4fff
+			mov cx, 0x1fff
 			call	basicDelay
 			MOV		AL,0x0	 		;
 			MOV		DX, uart_IER
@@ -88,8 +88,8 @@ UART_RX:
 			STC 				; Set the carry flag
 END:			
 			RET
-
-UART_TX:
+printch:
+UART_TX:	PUSH BX
 			PUSH AX
 			MOV BX, UART_TX_WAIT	; Set CB to the transmit timeout
 LOOP_UART_TX:
@@ -102,36 +102,63 @@ LOOP_UART_TX:
 			DEC	BX
 			JNZ LOOP_UART_TX		; Otherwise loop
 			POP	AX					; We've timed out at this point so
+			POP BX
 			CLC						; Clear the carry flag and preserve AX
 			RET
 OUT_UART_TX:
-			POP	AX					; Good to send at this point, so		
+			POP	AX					; Good to send at this point, so	
+			CMP AL, 0x0D
+			JZ  println
 			MOV	DX, uart_tx_rx
 			OUT	DX, AL		; Write the character to the UART transmit buffer
-			mov	cx, 0x17ff
+			mov	cx, 0xff
 			call basicDelay
+			POP BX	
 			STC						; Set carry flag
 			RET
+println:
+			MOV	DX, uart_tx_rx
+			OUT	DX, AL		; Write the character to the UART transmit buffer
+			mov	cx, 0xff
+			call basicDelay
+			MOV AL, 0x0D
+			MOV	DX, uart_tx_rx
+			OUT	DX, AL		; Write the character to the UART transmit buffer
+			mov	CX, 0xff
+			call basicDelay
+			POP BX	
+			STC						; Set carry flag
+			RET
+
 ;print
 ;parameters:
 ;          bx = message address
 ;
-print:
+;print:
+;        	mov  al,byte ds:[bx]
+;        	cmp  al,0h
+;        	jz   fimPrint;
+;
+;			MOV	DX, uart_tx_rx
+; ;       	OUT	DX, AL
+;			mov	cx, 0xff
+;			call basicDelay
+;
+;        	inc  bx
+;        	jmp  print
+;fimPrint:   ret
+
+print2:
         	mov  al,byte ds:[bx]
         	cmp  al,0h
-        	jz   fimPrint
-
-			MOV	DX, uart_tx_rx
-        	OUT	DX, AL
-			mov	cx, 0xff
-			call basicDelay
-
+        	jz   fimPrint2
 cont:
-        	inc  bx
-        	jmp  print
-fimPrint:   ret
+			call UART_TX
+			JNC	cont
 
-		
+        	inc  bx
+        	jmp  print2
+fimPrint2:   ret		
 
 ;;serialLoop:
 ;;			mov	al,'C'

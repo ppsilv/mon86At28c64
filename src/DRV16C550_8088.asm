@@ -88,8 +88,22 @@ UART_RX:
 			STC 				; Set the carry flag
 END:			
 			RET
+
+UART_RX_blct:	
+			MOV DX, uart_LSR
+			IN	AL, DX	 		; Get the line status register
+			AND AL, 0x01		; Check for characters in buffer
+			JZ	UART_RX_blct	; Just loopif no characters
+			MOV DX, uart_tx_rx
+			IN	AL, DX			; Read the character from the UART receive buffer
+			RET
+
+
 printch:
-UART_TX:	PUSH BX
+UART_TX:	
+			PUSH DX
+			PUSH CX 	
+			PUSH BX
 			PUSH AX
 			MOV BX, UART_TX_WAIT	; Set CB to the transmit timeout
 LOOP_UART_TX:
@@ -113,7 +127,9 @@ OUT_UART_TX:
 			OUT	DX, AL		; Write the character to the UART transmit buffer
 			mov	cx, 0x2ff
 			call basicDelay
-			POP BX	
+			POP BX
+			POP CX
+			POP DX
 			STC						; Set carry flag
 			RET
 println:
@@ -127,6 +143,8 @@ println:
 			mov	CX, 0xff
 			call basicDelay
 			POP BX	
+			POP CX
+			POP DX
 			STC						; Set carry flag
 			RET
 
@@ -160,19 +178,33 @@ cont:
         	jmp  print2
 fimPrint2:   ret		
 
-print3:
-        	mov  al,byte ds:[bx]
+printFromDram:
+        	mov  al,byte es:[bx]
         	cmp  al,0h
-        	jz   fimPrint3
+        	jz   fimPrintFromDram
 
-			MOV	DX, uart_tx_rx
-			OUT	DX, AL		; Write the character to the UART transmit buffer
-			mov	cx, 0xff
-			call basicDelay
-
+contFromDram:
+			call UART_TX
+			JNC	contFromDram
         	inc  bx
-        	jmp  print2
-fimPrint3:   ret		
+        	jmp  printFromDram
+
+fimPrintFromDram:  
+			ret		
+
+;print3:
+;        	mov  al,byte ds:[bx]
+;        	cmp  al,0h
+;        	jz   fimPrint3
+;
+;			MOV	DX, uart_tx_rx
+;			OUT	DX, AL		; Write the character to the UART transmit buffer
+;			mov	cx, 0xff
+;			call basicDelay
+;
+;        	inc  bx
+;        	jmp  print2
+;fimPrint3:   ret		
 
 	
 basicDelay:

@@ -27,7 +27,13 @@
 %define MODEL_BYTE	0FEh		; IBM PC/XT
 %define VERSION		'1.0.02'	; BIOS version
 
+%define context_off  0x0
+%define context_seg  0x2
+%define context_len  0x4
+%define context_val  0x6000
+
 bioscseg	equ	0F000h
+dramcseg        equ     06000h
 biosdseg	equ	0040h
 
 post_reg	equ	80h
@@ -36,9 +42,14 @@ equip_serial	equ	00h	; word[4] - addresses of serial ports
 unused_reg	equ	0C0h	; used for hardware detection and I/O delays
 equipment_list	equ	10h	; word - equpment list
 
+reg_addr_dump   equ     0x0000
+reg_buff_read   equ     0x0002  ; buffer 255 bytes
+reg_counter     equ     0x0100  ; char counter in the buffer
+reg_next_dumm   equ     0x0101  ; next variable
+
         org	START
 
-init:   jmp     init2
+           jmp     init
            ;12345678901234567890
 msg0    db "8088 - CPU TXM/8 III",0
 msg1    db "Paulo Silva  (c)2024",0
@@ -55,15 +66,18 @@ welcome		db	"XT 8088 BIOS, Version "
 		db	"CPU 8088-2   board TXM/8 III  ", 0Dh
 		db	"Mon86 V ",VERSION ," 2443A 1MB Dram Rom at28c64", 0Dh, 0
         
-init2:
+init:
         cli				; disable interrupts
         cld				; clear direction flag
-        mov ax, 0x7000
+        mov ax, 0x6000
+        mov es, ax
+        mov ax, 0x7000                  ; Segmento Stack
         mov ss, ax
         mov ax, 0xF000
         mov ds, ax
         xor sp, sp
-        mov es, sp
+        mov  bx,  reg_counter
+        mov  byte es:[bx], 0x0 
 
         call configure_uart
 
@@ -72,27 +86,114 @@ init2:
         mov  bx, welcome
         call print2
 
-        Mov dh, 0x6
-        Mov dl, 0xf
-        ;call scr_goto
+        mov AX, 0xE000
+        call writeRegAddrDump
+        call dump
+        jmp MainLoop
 
+writeRegAddrDump:
+        push AX
+        mov AX, dramcseg ; Segmento DRAM
+        mov ES, AX
+        pop AX
+        mov word es:[reg_addr_dump], AX
+        mov bx, word es:[reg_addr_dump]
+        ret
 
+ReadLine:
+        mov cl,0x0
+        mov  bx,  reg_buff_read
 loop:
         call printPrompt
-loopP:
-        call UART_RX       
-        jnc loopP
+loopP:  ;RX blocante
+        call UART_RX_blct       
+ ;       jnc  loopP
         call printch
-        CMP AL, 0x0A
-        JNZ loopP
+
+        mov  byte es:[bx], al 
+        mov  byte es:[bx+1], 0x0 
+        inc  bx
+
+        CMP  AL, 0x0A
+        JNZ  loopP
+        call printLf
         call printPrompt
-        jmp loopP
+        mov  BX, reg_buff_read
+        call printFromDram
         ret
+
+MainLoop:
+        call ReadLine
+        jmp MainLoop        
 ;=================================
 ; Dump memory
 ; Memory address: bx
-;
+;        counter: cx
 dump:
+        PUSH DS
+        MOV  AX, 0xF000
+        MOV DS, AX
+        mov  Cl, 16
+
+dump_01:        
+        mov  al, 0x0d
+        call UART_TX
+        mov  AX, BX
+        call print_hex
+        mov  al, ':'
+        call UART_TX
+        MOV  AL, ' '
+        CALL printch
+        
+        ;;Write 16 bytes em hexadecimal
+        MOV  CH, 16
+dump_02:
+        MOV  AL, DS:[BX]
+        CALL byte_to_hex_str
+        PUSH AX
+        CALL printch
+        POP  AX
+        MOV  AL, AH
+        CALL printch
+        MOV  AL, ' '
+        CALL printch
+        INC  BX
+        DEC  CH
+        JNZ  dump_02
+        ;;Wrote 16 bytes
+
+        MOV  AL, ' '
+        CALL printch
+
+        SUB  BX, 16
+
+        ;;Write 16 bytes em ASCII
+        MOV  CH, 16
+dump_03:
+        MOV  AL, DS:[BX]
+        CMP  AL, 0x20
+        JC  printPonto ; Flag carry set to 1 AL < 0x20
+        CMP  AL, 0x80
+        JnC  printPonto ; Flag carry set to 0 AL > 0x80
+        CALL printch
+        INC  BX
+        DEC  CH
+        JNZ  dump_03
+        jmp  dump_Fim
+printPonto:        
+        MOV  AL, '.'
+        CALL printch
+        INC  BX
+        DEC  CH
+        JNZ  dump_03
+        ;;Wrote 16 bytes
+
+dump_Fim:
+        DEC  CL
+        JNZ  dump_01
+        mov  al, 0x0d
+        call UART_TX
+        POP DS
         ret
 
 printPrompt:
@@ -100,45 +201,45 @@ printPrompt:
         call printch
         ret
 
+printLf:
+        mov al, 0x0D
+        call printch
+        ret
+
+
 lcdMessage:
         call lcdInit
 
-        mov ah, 0
-        mov al, 0
+        mov  ah, 0
+        mov  al, 0
         call setCursor
-        mov	bx,msg0
+        mov  bx,msg0
         call printstr
 
-        mov ah, 0
-        mov al, 1
+        mov  ah, 0
+        mov  al, 1
         call setCursor
-        mov	bx,msg1
+        mov  bx,msg1
         call printstr
 
-        mov ah, 0
-        mov al, 2
+        mov  ah, 0
+        mov  al, 2
         call setCursor
-        mov	bx,msg2
+        mov  bx,msg2
         call printstr
 
-        mov ah, 0
-        mov al, 3
+        mov  ah, 0
+        mov  al, 3
         call setCursor
-        mov	bx,msg3
+        mov  bx,msg3
         call printstr
         ret
 
 writeRam:
-        push AX
-        mov AX, 0h
-        mov DS, AX
-        pop AX
-        mov [0h], AX
+        mov byte ES:[BX], AL
         ret
 readRam:
-        mov AX, 0h
-        mov DS, AX
-        mov AX,[0h]
+        mov AL, byte ES:[BX]
         ret
 ;byte_to_hex_str
 ;This function return in AX the ascii code for hexadecimal number from 0 to F
@@ -147,6 +248,7 @@ readRam:
 ;               AX = output
 ;Changes CL
 byte_to_hex_str:
+        PUSH CX
         mov ah, al
         mov cl, 4
         shr al, cl
@@ -161,6 +263,7 @@ byte_to_hex_str:
 .2:
         add ax, "00"
 .ret:
+        POP CX
         ret
 
 ;=========================================================================
@@ -179,9 +282,7 @@ print_digit:
 	jna	.1
 	add	al,'A'-'9'-1		; a hex digit
 .1:
-	mov	ah,0Eh			; Int 10 function 0Eh - teletype output
-	mov	bl,07h			; just in case we're in graphic mode
-	int	10h
+        call    printch
 	pop	bx
 	pop	ax
 	ret
@@ -229,7 +330,7 @@ print_byte:
 
         setloc	0FFF0h			; Power-On Entry Point
 reset:
-        jmp 0xF000:init2
+        jmp 0xF000:init
 
         setloc	0FFF5h			; ROM Date in ASCII
         db	DATE			; BIOS release date MM/DD/YY

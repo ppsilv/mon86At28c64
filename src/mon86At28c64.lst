@@ -27,226 +27,327 @@
     27                                  %define MODEL_BYTE	0FEh		; IBM PC/XT
     28                                  %define VERSION		'1.0.02'	; BIOS version
     29                                  
-    30                                  bioscseg	equ	0F000h
-    31                                  biosdseg	equ	0040h
-    32                                  
-    33                                  post_reg	equ	80h
-    34                                  serial_timeout	equ	7Ch	; byte[4] - serial port timeout values
-    35                                  equip_serial	equ	00h	; word[4] - addresses of serial ports
-    36                                  unused_reg	equ	0C0h	; used for hardware detection and I/O delays
-    37                                  equipment_list	equ	10h	; word - equpment list
+    30                                  %define context_off  0x0
+    31                                  %define context_seg  0x2
+    32                                  %define context_len  0x4
+    33                                  %define context_val  0x6000
+    34                                  
+    35                                  bioscseg	equ	0F000h
+    36                                  dramcseg        equ     06000h
+    37                                  biosdseg	equ	0040h
     38                                  
-    39                                          org	START
-    40                                  
-    41 00000000 E99060                  init:   jmp     init2
-    42                                             ;12345678901234567890
-    43 00000003 38303838202D204350-     msg0    db "8088 - CPU TXM/8 III",0
-    43 0000000C 552054584D2F382049-
-    43 00000015 494900             
-    44 00000018 5061756C6F2053696C-     msg1    db "Paulo Silva  (c)2024",0
-    44 00000021 766120202863293230-
-    44 0000002A 323400             
-    45 0000002D 4D6F6E383620562031-     msg2    db "Mon86 V 1.0.00 2443A",0
-    45 00000036 2E302E303020323434-
-    45 0000003F 334100             
-    46 00000042 314D42206472616D20-     msg3    db "1MB dram rom at28c64",0
-    46 0000004B 726F6D206174323863-
-    46 00000054 363400             
-    47 00000057 0028145450              row:    db 0, 40, 20, 84, 80
-    48                                  
-    49 0000005C FF<rep 5FA4h>                   setloc	0E000h
-    49          ******************       warning: Inserting 24484 bytes [-w+user]
-    50                                  
-    51 00006000 585420383038382042-     welcome		db	"XT 8088 BIOS, Version "
-    51 00006009 494F532C2056657273-
-    51 00006012 696F6E20           
-    52 00006016 312E302E3032            		db	VERSION
-    53 0000601C 2E200D                  		db	". ", 0Dh
-    54 0000601F 5061756C6F2053696C-     		db	"Paulo Silva(pgordao) - Copyright (C) 2024", 0Dh
-    54 00006028 76612870676F726461-
-    54 00006031 6F29202D20436F7079-
-    54 0000603A 726967687420284329-
-    54 00006043 20323032340D       
-    55 00006049 43505520383038382D-     		db	"CPU 8088-2   board TXM/8 III  ", 0Dh
-    55 00006052 32202020626F617264-
-    55 0000605B 2054584D2F38204949-
-    55 00006064 4920200D           
-    56 00006068 4D6F6E383620562031-     		db	"Mon86 V ",VERSION ," 2443A 1MB Dram Rom at28c64", 0Dh, 0
-    56 00006071 2E302E303220323434-
-    56 0000607A 334120314D42204472-
-    56 00006083 616D20526F6D206174-
-    56 0000608C 32386336340D00     
-    57                                          
-    58                                  init2:
-    59 00006093 FA                              cli				; disable interrupts
-    60 00006094 FC                              cld				; clear direction flag
-    61 00006095 B80070                          mov ax, 0x7000
-    62 00006098 8ED0                            mov ss, ax
-    63 0000609A B800F0                          mov ax, 0xF000
-    64 0000609D 8ED8                            mov ds, ax
-    65 0000609F 31E4                            xor sp, sp
-    66 000060A1 8EC4                            mov es, sp
-    67                                  
-    68 000060A3 E8E200                          call configure_uart
-    69                                  
-    70 000060A6 E86002                          call scr_clear
-    71                                  
-    72 000060A9 BB[0060]                        mov  bx, welcome
-    73 000060AC E87601                          call print2
-    74                                  
-    75 000060AF B606                            Mov dh, 0x6
-    76 000060B1 B20F                            Mov dl, 0xf
-    77                                          ;call scr_goto
-    78                                  
-    79                                  
-    80                                  loop:
-    81 000060B3 E81300                          call printPrompt
-    82                                  loopP:
-    83 000060B6 E81801                          call UART_RX       
-    84 000060B9 73FB                            jnc loopP
-    85 000060BB E82201                          call printch
-    86 000060BE 3C0A                            CMP AL, 0x0A
-    87 000060C0 75F4                            JNZ loopP
-    88 000060C2 E80400                          call printPrompt
-    89 000060C5 EBEF                            jmp loopP
-    90 000060C7 C3                              ret
-    91                                  ;=================================
-    92                                  ; Dump memory
-    93                                  ; Memory address: bx
-    94                                  ;
-    95                                  dump:
-    96 000060C8 C3                              ret
-    97                                  
-    98                                  printPrompt:
-    99 000060C9 B03E                            mov al, '>'
-   100 000060CB E81201                          call printch
-   101 000060CE C3                              ret
+    39                                  post_reg	equ	80h
+    40                                  serial_timeout	equ	7Ch	; byte[4] - serial port timeout values
+    41                                  equip_serial	equ	00h	; word[4] - addresses of serial ports
+    42                                  unused_reg	equ	0C0h	; used for hardware detection and I/O delays
+    43                                  equipment_list	equ	10h	; word - equpment list
+    44                                  
+    45                                  reg_addr_dump   equ     0x0000
+    46                                  reg_buff_read   equ     0x0002  ; buffer 255 bytes
+    47                                  reg_counter     equ     0x0100  ; char counter in the buffer
+    48                                  reg_next_dumm   equ     0x0101  ; next variable
+    49                                  
+    50                                          org	START
+    51                                  
+    52 00000000 E99060                             jmp     init
+    53                                             ;12345678901234567890
+    54 00000003 38303838202D204350-     msg0    db "8088 - CPU TXM/8 III",0
+    54 0000000C 552054584D2F382049-
+    54 00000015 494900             
+    55 00000018 5061756C6F2053696C-     msg1    db "Paulo Silva  (c)2024",0
+    55 00000021 766120202863293230-
+    55 0000002A 323400             
+    56 0000002D 4D6F6E383620562031-     msg2    db "Mon86 V 1.0.00 2443A",0
+    56 00000036 2E302E303020323434-
+    56 0000003F 334100             
+    57 00000042 314D42206472616D20-     msg3    db "1MB dram rom at28c64",0
+    57 0000004B 726F6D206174323863-
+    57 00000054 363400             
+    58 00000057 0028145450              row:    db 0, 40, 20, 84, 80
+    59                                  
+    60 0000005C FF<rep 5FA4h>                   setloc	0E000h
+    60          ******************       warning: Inserting 24484 bytes [-w+user]
+    61                                  
+    62 00006000 585420383038382042-     welcome		db	"XT 8088 BIOS, Version "
+    62 00006009 494F532C2056657273-
+    62 00006012 696F6E20           
+    63 00006016 312E302E3032            		db	VERSION
+    64 0000601C 2E200D                  		db	". ", 0Dh
+    65 0000601F 5061756C6F2053696C-     		db	"Paulo Silva(pgordao) - Copyright (C) 2024", 0Dh
+    65 00006028 76612870676F726461-
+    65 00006031 6F29202D20436F7079-
+    65 0000603A 726967687420284329-
+    65 00006043 20323032340D       
+    66 00006049 43505520383038382D-     		db	"CPU 8088-2   board TXM/8 III  ", 0Dh
+    66 00006052 32202020626F617264-
+    66 0000605B 2054584D2F38204949-
+    66 00006064 4920200D           
+    67 00006068 4D6F6E383620562031-     		db	"Mon86 V ",VERSION ," 2443A 1MB Dram Rom at28c64", 0Dh, 0
+    67 00006071 2E302E303220323434-
+    67 0000607A 334120314D42204472-
+    67 00006083 616D20526F6D206174-
+    67 0000608C 32386336340D00     
+    68                                          
+    69                                  init:
+    70 00006093 FA                              cli				; disable interrupts
+    71 00006094 FC                              cld				; clear direction flag
+    72 00006095 B80060                          mov ax, 0x6000
+    73 00006098 8EC0                            mov es, ax
+    74 0000609A B80070                          mov ax, 0x7000                  ; Segmento Stack
+    75 0000609D 8ED0                            mov ss, ax
+    76 0000609F B800F0                          mov ax, 0xF000
+    77 000060A2 8ED8                            mov ds, ax
+    78 000060A4 31E4                            xor sp, sp
+    79 000060A6 BB0001                          mov  bx,  reg_counter
+    80 000060A9 26C60700                        mov  byte es:[bx], 0x0 
+    81                                  
+    82 000060AD E87601                          call configure_uart
+    83                                  
+    84 000060B0 E80203                          call scr_clear
+    85                                  
+    86 000060B3 BB[0060]                        mov  bx, welcome
+    87 000060B6 E81D02                          call print2
+    88                                  
+    89 000060B9 B800E0                          mov AX, 0xE000
+    90 000060BC E80500                          call writeRegAddrDump
+    91 000060BF E84000                          call dump
+    92 000060C2 EB39                            jmp MainLoop
+    93                                  
+    94                                  writeRegAddrDump:
+    95 000060C4 50                              push AX
+    96 000060C5 B80060                          mov AX, dramcseg ; Segmento DRAM
+    97 000060C8 8EC0                            mov ES, AX
+    98 000060CA 58                              pop AX
+    99 000060CB 26A30000                        mov word es:[reg_addr_dump], AX
+   100 000060CF 268B1E0000                      mov bx, word es:[reg_addr_dump]
+   101 000060D4 C3                              ret
    102                                  
-   103                                  lcdMessage:
-   104 000060CF E8D401                          call lcdInit
-   105                                  
-   106 000060D2 B400                            mov ah, 0
-   107 000060D4 B000                            mov al, 0
-   108 000060D6 E8A101                          call setCursor
-   109 000060D9 BB[0300]                        mov	bx,msg0
-   110 000060DC E88D01                          call printstr
-   111                                  
-   112 000060DF B400                            mov ah, 0
-   113 000060E1 B001                            mov al, 1
-   114 000060E3 E89401                          call setCursor
-   115 000060E6 BB[1800]                        mov	bx,msg1
-   116 000060E9 E88001                          call printstr
-   117                                  
-   118 000060EC B400                            mov ah, 0
-   119 000060EE B002                            mov al, 2
-   120 000060F0 E88701                          call setCursor
-   121 000060F3 BB[2D00]                        mov	bx,msg2
-   122 000060F6 E87301                          call printstr
-   123                                  
-   124 000060F9 B400                            mov ah, 0
-   125 000060FB B003                            mov al, 3
-   126 000060FD E87A01                          call setCursor
-   127 00006100 BB[4200]                        mov	bx,msg3
-   128 00006103 E86601                          call printstr
-   129 00006106 C3                              ret
-   130                                  
-   131                                  writeRam:
-   132 00006107 50                              push AX
-   133 00006108 B80000                          mov AX, 0h
-   134 0000610B 8ED8                            mov DS, AX
-   135 0000610D 58                              pop AX
-   136 0000610E A30000                          mov [0h], AX
-   137 00006111 C3                              ret
-   138                                  readRam:
-   139 00006112 B80000                          mov AX, 0h
-   140 00006115 8ED8                            mov DS, AX
-   141 00006117 A10000                          mov AX,[0h]
-   142 0000611A C3                              ret
-   143                                  ;byte_to_hex_str
-   144                                  ;This function return in AX the ascii code for hexadecimal number from 0 to F
-   145                                  ;Parameters:
-   146                                  ;               AL = imput
-   147                                  ;               AX = output
-   148                                  ;Changes CL
-   149                                  byte_to_hex_str:
-   150 0000611B 88C4                            mov ah, al
-   151 0000611D B104                            mov cl, 4
-   152 0000611F D2E8                            shr al, cl
-   153 00006121 250F0F                          and ax, 0x0f0f
-   154 00006124 3C09                            cmp al, 0x09
-   155 00006126 7602                            jbe .1
-   156 00006128 0407                            add al, 'A' - '0' - 10
-   157                                  .1:
-   158 0000612A 80FC09                          cmp ah, 0x09
-   159 0000612D 7603                            jbe .2
-   160 0000612F 80C407                          add ah, 'A' - '0' - 10
-   161                                  .2:
-   162 00006132 053030                          add ax, "00"
-   163                                  .ret:
-   164 00006135 C3                              ret
-   165                                  
-   166                                  ;=========================================================================
-   167                                  ; print_digit - print hexadecimal digit
-   168                                  ; Input:
-   169                                  ;	AL - bits 3...0 - digit to print (0...F)
-   170                                  ; Output:
-   171                                  ;	none
-   172                                  ;-------------------------------------------------------------------------
-   173                                  print_digit:
-   174 00006136 50                      	push	ax
-   175 00006137 53                      	push	bx
-   176 00006138 240F                    	and	al,0Fh
-   177 0000613A 0430                    	add	al,'0'			; convert to ASCII
-   178 0000613C 3C39                    	cmp	al,'9'			; less or equal 9?
-   179 0000613E 7602                    	jna	.1
-   180 00006140 0407                    	add	al,'A'-'9'-1		; a hex digit
-   181                                  .1:
-   182 00006142 B40E                    	mov	ah,0Eh			; Int 10 function 0Eh - teletype output
-   183 00006144 B307                    	mov	bl,07h			; just in case we're in graphic mode
-   184 00006146 CD10                    	int	10h
-   185 00006148 5B                      	pop	bx
-   186 00006149 58                      	pop	ax
-   187 0000614A C3                      	ret
-   188                                  
-   189                                  ;=========================================================================
-   190                                  ; print_hex - print 16-bit number in hexadecimal
-   191                                  ; Input:
-   192                                  ;	AX - number to print
-   193                                  ; Output:
-   194                                  ;	none
-   195                                  ;-------------------------------------------------------------------------
-   196                                  print_hex:
-   197 0000614B 86C4                    	xchg	al,ah
-   198 0000614D E80600                  	call	print_byte		; print the upper byte
-   199 00006150 86C4                    	xchg	al,ah
-   200 00006152 E80100                  	call	print_byte		; print the lower byte
-   201 00006155 C3                      	ret
-   202                                  ;=========================================================================
-   203                                  ; print_byte - print a byte in hexadecimal
-   204                                  ; Input:
-   205                                  ;	AL - byte to print
-   206                                  ; Output:
-   207                                  ;	none
-   208                                  ;-------------------------------------------------------------------------
-   209                                  print_byte:
-   210 00006156 D0C0                    	rol	al,1
-   211 00006158 D0C0                    	rol	al,1
-   212 0000615A D0C0                    	rol	al,1
-   213 0000615C D0C0                    	rol	al,1
-   214 0000615E E8D5FF                  	call	print_digit
-   215 00006161 D0C0                    	rol	al,1
-   216 00006163 D0C0                    	rol	al,1
-   217 00006165 D0C0                    	rol	al,1
-   218 00006167 D0C0                    	rol	al,1
-   219 00006169 E8CAFF                  	call	print_digit
-   220 0000616C C3                      	ret
-   221                                  
-   222                                  %include "DRV16C550_8088.asm"		
+   103                                  ReadLine:
+   104 000060D5 B100                            mov cl,0x0
+   105 000060D7 BB0200                          mov  bx,  reg_buff_read
+   106                                  loop:
+   107 000060DA E89100                          call printPrompt
+   108                                  loopP:  ;RX blocante
+   109 000060DD E89E01                          call UART_RX_blct       
+   110                                   ;       jnc  loopP
+   111 000060E0 E8A801                          call printch
+   112                                  
+   113 000060E3 268807                          mov  byte es:[bx], al 
+   114 000060E6 26C6470100                      mov  byte es:[bx+1], 0x0 
+   115 000060EB 43                              inc  bx
+   116                                  
+   117 000060EC 3C0A                            CMP  AL, 0x0A
+   118 000060EE 75ED                            JNZ  loopP
+   119 000060F0 E88100                          call printLf
+   120 000060F3 E87800                          call printPrompt
+   121 000060F6 BB0200                          mov  BX, reg_buff_read
+   122 000060F9 E8EA01                          call printFromDram
+   123 000060FC C3                              ret
+   124                                  
+   125                                  MainLoop:
+   126 000060FD E8D5FF                          call ReadLine
+   127 00006100 EBFB                            jmp MainLoop        
+   128                                  ;=================================
+   129                                  ; Dump memory
+   130                                  ; Memory address: bx
+   131                                  ;        counter: cx
+   132                                  dump:
+   133 00006102 1E                              PUSH DS
+   134 00006103 B800F0                          MOV  AX, 0xF000
+   135 00006106 8ED8                            MOV DS, AX
+   136 00006108 B110                            mov  Cl, 16
+   137                                  
+   138                                  dump_01:        
+   139 0000610A B00D                            mov  al, 0x0d
+   140 0000610C E87C01                          call UART_TX
+   141 0000610F 89D8                            mov  AX, BX
+   142 00006111 E8D500                          call print_hex
+   143 00006114 B03A                            mov  al, ':'
+   144 00006116 E87201                          call UART_TX
+   145 00006119 B020                            MOV  AL, ' '
+   146 0000611B E86D01                          CALL printch
+   147                                          
+   148                                          ;;Write 16 bytes em hexadecimal
+   149 0000611E B510                            MOV  CH, 16
+   150                                  dump_02:
+   151 00006120 3E8A07                          MOV  AL, DS:[BX]
+   152 00006123 E89400                          CALL byte_to_hex_str
+   153 00006126 50                              PUSH AX
+   154 00006127 E86101                          CALL printch
+   155 0000612A 58                              POP  AX
+   156 0000612B 88E0                            MOV  AL, AH
+   157 0000612D E85B01                          CALL printch
+   158 00006130 B020                            MOV  AL, ' '
+   159 00006132 E85601                          CALL printch
+   160 00006135 43                              INC  BX
+   161 00006136 FECD                            DEC  CH
+   162 00006138 75E6                            JNZ  dump_02
+   163                                          ;;Wrote 16 bytes
+   164                                  
+   165 0000613A B020                            MOV  AL, ' '
+   166 0000613C E84C01                          CALL printch
+   167                                  
+   168 0000613F 83EB10                          SUB  BX, 16
+   169                                  
+   170                                          ;;Write 16 bytes em ASCII
+   171 00006142 B510                            MOV  CH, 16
+   172                                  dump_03:
+   173 00006144 3E8A07                          MOV  AL, DS:[BX]
+   174 00006147 3C20                            CMP  AL, 0x20
+   175 00006149 720E                            JC  printPonto ; Flag carry set to 1 AL < 0x20
+   176 0000614B 3C80                            CMP  AL, 0x80
+   177 0000614D 730A                            JnC  printPonto ; Flag carry set to 0 AL > 0x80
+   178 0000614F E83901                          CALL printch
+   179 00006152 43                              INC  BX
+   180 00006153 FECD                            DEC  CH
+   181 00006155 75ED                            JNZ  dump_03
+   182 00006157 EB0A                            jmp  dump_Fim
+   183                                  printPonto:        
+   184 00006159 B02E                            MOV  AL, '.'
+   185 0000615B E82D01                          CALL printch
+   186 0000615E 43                              INC  BX
+   187 0000615F FECD                            DEC  CH
+   188 00006161 75E1                            JNZ  dump_03
+   189                                          ;;Wrote 16 bytes
+   190                                  
+   191                                  dump_Fim:
+   192 00006163 FEC9                            DEC  CL
+   193 00006165 75A3                            JNZ  dump_01
+   194 00006167 B00D                            mov  al, 0x0d
+   195 00006169 E81F01                          call UART_TX
+   196 0000616C 1F                              POP DS
+   197 0000616D C3                              ret
+   198                                  
+   199                                  printPrompt:
+   200 0000616E B03E                            mov al, '>'
+   201 00006170 E81801                          call printch
+   202 00006173 C3                              ret
+   203                                  
+   204                                  printLf:
+   205 00006174 B00D                            mov al, 0x0D
+   206 00006176 E81201                          call printch
+   207 00006179 C3                              ret
+   208                                  
+   209                                  
+   210                                  lcdMessage:
+   211 0000617A E8D501                          call lcdInit
+   212                                  
+   213 0000617D B400                            mov  ah, 0
+   214 0000617F B000                            mov  al, 0
+   215 00006181 E8A201                          call setCursor
+   216 00006184 BB[0300]                        mov  bx,msg0
+   217 00006187 E88E01                          call printstr
+   218                                  
+   219 0000618A B400                            mov  ah, 0
+   220 0000618C B001                            mov  al, 1
+   221 0000618E E89501                          call setCursor
+   222 00006191 BB[1800]                        mov  bx,msg1
+   223 00006194 E88101                          call printstr
+   224                                  
+   225 00006197 B400                            mov  ah, 0
+   226 00006199 B002                            mov  al, 2
+   227 0000619B E88801                          call setCursor
+   228 0000619E BB[2D00]                        mov  bx,msg2
+   229 000061A1 E87401                          call printstr
+   230                                  
+   231 000061A4 B400                            mov  ah, 0
+   232 000061A6 B003                            mov  al, 3
+   233 000061A8 E87B01                          call setCursor
+   234 000061AB BB[4200]                        mov  bx,msg3
+   235 000061AE E86701                          call printstr
+   236 000061B1 C3                              ret
+   237                                  
+   238                                  writeRam:
+   239 000061B2 268807                          mov byte ES:[BX], AL
+   240 000061B5 C3                              ret
+   241                                  readRam:
+   242 000061B6 268A07                          mov AL, byte ES:[BX]
+   243 000061B9 C3                              ret
+   244                                  ;byte_to_hex_str
+   245                                  ;This function return in AX the ascii code for hexadecimal number from 0 to F
+   246                                  ;Parameters:
+   247                                  ;               AL = imput
+   248                                  ;               AX = output
+   249                                  ;Changes CL
+   250                                  byte_to_hex_str:
+   251 000061BA 51                              PUSH CX
+   252 000061BB 88C4                            mov ah, al
+   253 000061BD B104                            mov cl, 4
+   254 000061BF D2E8                            shr al, cl
+   255 000061C1 250F0F                          and ax, 0x0f0f
+   256 000061C4 3C09                            cmp al, 0x09
+   257 000061C6 7602                            jbe .1
+   258 000061C8 0407                            add al, 'A' - '0' - 10
+   259                                  .1:
+   260 000061CA 80FC09                          cmp ah, 0x09
+   261 000061CD 7603                            jbe .2
+   262 000061CF 80C407                          add ah, 'A' - '0' - 10
+   263                                  .2:
+   264 000061D2 053030                          add ax, "00"
+   265                                  .ret:
+   266 000061D5 59                              POP CX
+   267 000061D6 C3                              ret
+   268                                  
+   269                                  ;=========================================================================
+   270                                  ; print_digit - print hexadecimal digit
+   271                                  ; Input:
+   272                                  ;	AL - bits 3...0 - digit to print (0...F)
+   273                                  ; Output:
+   274                                  ;	none
+   275                                  ;-------------------------------------------------------------------------
+   276                                  print_digit:
+   277 000061D7 50                      	push	ax
+   278 000061D8 53                      	push	bx
+   279 000061D9 240F                    	and	al,0Fh
+   280 000061DB 0430                    	add	al,'0'			; convert to ASCII
+   281 000061DD 3C39                    	cmp	al,'9'			; less or equal 9?
+   282 000061DF 7602                    	jna	.1
+   283 000061E1 0407                    	add	al,'A'-'9'-1		; a hex digit
+   284                                  .1:
+   285 000061E3 E8A500                          call    printch
+   286 000061E6 5B                      	pop	bx
+   287 000061E7 58                      	pop	ax
+   288 000061E8 C3                      	ret
+   289                                  
+   290                                  ;=========================================================================
+   291                                  ; print_hex - print 16-bit number in hexadecimal
+   292                                  ; Input:
+   293                                  ;	AX - number to print
+   294                                  ; Output:
+   295                                  ;	none
+   296                                  ;-------------------------------------------------------------------------
+   297                                  print_hex:
+   298 000061E9 86C4                    	xchg	al,ah
+   299 000061EB E80600                  	call	print_byte		; print the upper byte
+   300 000061EE 86C4                    	xchg	al,ah
+   301 000061F0 E80100                  	call	print_byte		; print the lower byte
+   302 000061F3 C3                      	ret
+   303                                  ;=========================================================================
+   304                                  ; print_byte - print a byte in hexadecimal
+   305                                  ; Input:
+   306                                  ;	AL - byte to print
+   307                                  ; Output:
+   308                                  ;	none
+   309                                  ;-------------------------------------------------------------------------
+   310                                  print_byte:
+   311 000061F4 D0C0                    	rol	al,1
+   312 000061F6 D0C0                    	rol	al,1
+   313 000061F8 D0C0                    	rol	al,1
+   314 000061FA D0C0                    	rol	al,1
+   315 000061FC E8D8FF                  	call	print_digit
+   316 000061FF D0C0                    	rol	al,1
+   317 00006201 D0C0                    	rol	al,1
+   318 00006203 D0C0                    	rol	al,1
+   319 00006205 D0C0                    	rol	al,1
+   320 00006207 E8CDFF                  	call	print_digit
+   321 0000620A C3                      	ret
+   322                                  
+   323                                  %include "DRV16C550_8088.asm"		
      1                              <1>         CPU 8086
      2                              <1>         BITS 16
      3                              <1> 
      4                              <1> ; Port
-     5 0000616D F803                <1> COM1:	DW		0x3F8
+     5 0000620B F803                <1> COM1:	DW		0x3F8
      6                              <1> ; Here are the port numbers for various UART registers:
      7                              <1> uart_tx_rx 		EQU  0x3f8 ; 0 DLAB = 0 for Regs. TX and RX
      8                              <1> uart_DLL 		EQU  0x3f8 ; 0 DLAB = 1 Divisor lacth low
@@ -272,160 +373,192 @@
     28                              <1> 
     29                              <1> UART_TX_WAIT		EQU	0x7fff		; Count before a TX times out
     30                              <1> 
-    31 0000616F 53657269616C206472- <1> msg0_01:   db "Serial driver for 16C550",0
-    31 00006178 6976657220666F7220- <1>
-    31 00006181 31364335353000      <1>
+    31 0000620D 53657269616C206472- <1> msg0_01:   db "Serial driver for 16C550",0
+    31 00006216 6976657220666F7220- <1>
+    31 0000621F 31364335353000      <1>
     32                              <1> ;configure_uart
     33                              <1> ;Parameters:None
     34                              <1> ;			
     35                              <1> ;			
     36                              <1> configure_uart:
-    37 00006188 B9FF1F              <1> 			mov cx, 0x1fff
-    38 0000618B E8BC00              <1> 			call	basicDelay
-    39 0000618E B000                <1> 			MOV		AL,0x0	 		;
-    40 00006190 BAF903              <1> 			MOV		DX, uart_IER
-    41 00006193 EE                  <1> 			OUT  	DX,	AL	; Disable interrupts
+    37 00006226 B9FF1F              <1> 			mov cx, 0x1fff
+    38 00006229 E8CA00              <1> 			call	basicDelay
+    39 0000622C B000                <1> 			MOV		AL,0x0	 		;
+    40 0000622E BAF903              <1> 			MOV		DX, uart_IER
+    41 00006231 EE                  <1> 			OUT  	DX,	AL	; Disable interrupts
     42                              <1> 
-    43 00006194 B91F00              <1> 			mov cx, 0x1f
-    44 00006197 E8B000              <1> 			call	basicDelay
+    43 00006232 B91F00              <1> 			mov cx, 0x1f
+    44 00006235 E8BE00              <1> 			call	basicDelay
     45                              <1> 
-    46 0000619A B080                <1> 			MOV		AL, 0x80			;
-    47 0000619C BAFB03              <1> 			MOV		DX, uart_LCR
-    48 0000619F EE                  <1> 			OUT     DX,	AL 	; Turn DLAB on
-    49 000061A0 B91F00              <1> 			mov cx, 0x1f
-    50 000061A3 E8A400              <1> 			call	basicDelay
+    46 00006238 B080                <1> 			MOV		AL, 0x80			;
+    47 0000623A BAFB03              <1> 			MOV		DX, uart_LCR
+    48 0000623D EE                  <1> 			OUT     DX,	AL 	; Turn DLAB on
+    49 0000623E B91F00              <1> 			mov cx, 0x1f
+    50 00006241 E8B200              <1> 			call	basicDelay
     51                              <1> 
-    52 000061A6 B008                <1> 			MOV		AL, UART_BAUD_38400 ;0x08
-    53 000061A8 BAF803              <1> 			MOV		DX, uart_DLL
-    54 000061AB EE                  <1> 			OUT     DX,   AL	; Set divisor low
-    55 000061AC B91F00              <1> 			mov cx, 0x1f
-    56 000061AF E89800              <1> 			call	basicDelay
+    52 00006244 B008                <1> 			MOV		AL, UART_BAUD_38400 ;0x08
+    53 00006246 BAF803              <1> 			MOV		DX, uart_DLL
+    54 00006249 EE                  <1> 			OUT     DX,   AL	; Set divisor low
+    55 0000624A B91F00              <1> 			mov cx, 0x1f
+    56 0000624D E8A600              <1> 			call	basicDelay
     57                              <1> 
-    58 000061B2 B000                <1> 			MOV		AL, 0x00		;
-    59 000061B4 BAF903              <1> 			MOV		DX, uart_DLH
-    60 000061B7 EE                  <1> 			OUT     DX,	AL	; Set divisor high
-    61 000061B8 B91F00              <1> 			mov cx, 0x1f
-    62 000061BB E88C00              <1> 			call	basicDelay
+    58 00006250 B000                <1> 			MOV		AL, 0x00		;
+    59 00006252 BAF903              <1> 			MOV		DX, uart_DLH
+    60 00006255 EE                  <1> 			OUT     DX,	AL	; Set divisor high
+    61 00006256 B91F00              <1> 			mov cx, 0x1f
+    62 00006259 E89A00              <1> 			call	basicDelay
     63                              <1> 
-    64 000061BE B003                <1> 			MOV     AL, 0x03	; AH	
-    65 000061C0 BAFB03              <1> 			MOV		DX, uart_LCR
-    66 000061C3 EE                  <1> 			OUT     DX,	AL	; Write out flow control bits 8,1,N
-    67 000061C4 B91F00              <1> 			mov cx, 0x1f
-    68 000061C7 E88000              <1> 			call	basicDelay
+    64 0000625C B003                <1> 			MOV     AL, 0x03	; AH	
+    65 0000625E BAFB03              <1> 			MOV		DX, uart_LCR
+    66 00006261 EE                  <1> 			OUT     DX,	AL	; Write out flow control bits 8,1,N
+    67 00006262 B91F00              <1> 			mov cx, 0x1f
+    68 00006265 E88E00              <1> 			call	basicDelay
     69                              <1> 
-    70 000061CA B081                <1> 			MOV 	AL,0x81			;
-    71 000061CC BAFA03              <1> 			MOV		DX, uart_ISR
-    72 000061CF EE                  <1> 			OUT     DX,	AL	; Turn on FIFO, with trigger level of 8.
+    70 00006268 B081                <1> 			MOV 	AL,0x81			;
+    71 0000626A BAFA03              <1> 			MOV		DX, uart_ISR
+    72 0000626D EE                  <1> 			OUT     DX,	AL	; Turn on FIFO, with trigger level of 8.
     73                              <1> 								                ; This turn on the 16bytes buffer!
-    74 000061D0 C3                  <1> 			RET
+    74 0000626E C3                  <1> 			RET
     75                              <1> ;UART_RX:
     76                              <1> ;Parameters: 
     77                              <1> ;			AL = return the available character
     78                              <1> ;			If al returns with a valid char flag carry is set, otherwise
     79                              <1> ;			flag carry is clear
     80                              <1> UART_RX:	
-    81 000061D1 BAFD03              <1> 			MOV DX, uart_LSR
-    82 000061D4 EC                  <1> 			IN	AL, DX	 		; Get the line status register
-    83 000061D5 2401                <1> 			AND AL, 0x01		; Check for characters in buffer
-    84 000061D7 F8                  <1> 			CLC 				; Clear carry
-    85 000061D8 7405                <1> 			JZ	END				; Just ret (with carry clear) if no characters
-    86 000061DA BAF803              <1> 			MOV DX, uart_tx_rx
-    87 000061DD EC                  <1> 			IN	AL, DX			; Read the character from the UART receive buffer
-    88 000061DE F9                  <1> 			STC 				; Set the carry flag
+    81 0000626F BAFD03              <1> 			MOV DX, uart_LSR
+    82 00006272 EC                  <1> 			IN	AL, DX	 		; Get the line status register
+    83 00006273 2401                <1> 			AND AL, 0x01		; Check for characters in buffer
+    84 00006275 F8                  <1> 			CLC 				; Clear carry
+    85 00006276 7405                <1> 			JZ	END				; Just ret (with carry clear) if no characters
+    86 00006278 BAF803              <1> 			MOV DX, uart_tx_rx
+    87 0000627B EC                  <1> 			IN	AL, DX			; Read the character from the UART receive buffer
+    88 0000627C F9                  <1> 			STC 				; Set the carry flag
     89                              <1> END:			
-    90 000061DF C3                  <1> 			RET
-    91                              <1> printch:
-    92 000061E0 53                  <1> UART_TX:	PUSH BX
-    93 000061E1 50                  <1> 			PUSH AX
-    94 000061E2 BBFF7F              <1> 			MOV BX, UART_TX_WAIT	; Set CB to the transmit timeout
-    95                              <1> LOOP_UART_TX:
-    96 000061E5 BAFD03              <1> 			MOV DX, uart_LSR
-    97 000061E8 EC                  <1> 			IN	AL,	DX 				; Get the line status register
-    98 000061E9 2460                <1> 			AND AL, 0x60			; Check for TX empty
-    99 000061EB 750D                <1> 			JNZ	OUT_UART_TX			; If set, then TX is empty, goto transmit
-   100 000061ED B9FF17              <1> 			mov	cx, 0x17ff
-   101 000061F0 E85700              <1> 			call basicDelay
-   102 000061F3 4B                  <1> 			DEC	BX
-   103 000061F4 75EF                <1> 			JNZ LOOP_UART_TX		; Otherwise loop
-   104 000061F6 58                  <1> 			POP	AX					; We've timed out at this point so
-   105 000061F7 5B                  <1> 			POP BX
-   106 000061F8 F8                  <1> 			CLC						; Clear the carry flag and preserve AX
-   107 000061F9 C3                  <1> 			RET
-   108                              <1> OUT_UART_TX:
-   109 000061FA 58                  <1> 			POP	AX					; Good to send at this point, so	
-   110 000061FB 3C0D                <1> 			CMP AL, 0x0D
-   111 000061FD 740D                <1> 			JZ  println
-   112 000061FF BAF803              <1> 			MOV	DX, uart_tx_rx
-   113 00006202 EE                  <1> 			OUT	DX, AL		; Write the character to the UART transmit buffer
-   114 00006203 B9FF02              <1> 			mov	cx, 0x2ff
-   115 00006206 E84100              <1> 			call basicDelay
-   116 00006209 5B                  <1> 			POP BX	
-   117 0000620A F9                  <1> 			STC						; Set carry flag
-   118 0000620B C3                  <1> 			RET
-   119                              <1> println:
-   120 0000620C BAF803              <1> 			MOV	DX, uart_tx_rx
-   121 0000620F EE                  <1> 			OUT	DX, AL		; Write the character to the UART transmit buffer
-   122 00006210 B9FF00              <1> 			mov	cx, 0xff
-   123 00006213 E83400              <1> 			call basicDelay
-   124 00006216 B00A                <1> 			MOV AL, 0x0A
-   125 00006218 BAF803              <1> 			MOV	DX, uart_tx_rx
-   126 0000621B EE                  <1> 			OUT	DX, AL		; Write the character to the UART transmit buffer
-   127 0000621C B9FF00              <1> 			mov	CX, 0xff
-   128 0000621F E82800              <1> 			call basicDelay
-   129 00006222 5B                  <1> 			POP BX	
-   130 00006223 F9                  <1> 			STC						; Set carry flag
-   131 00006224 C3                  <1> 			RET
-   132                              <1> 
-   133                              <1> ;print
-   134                              <1> ;parameters:
-   135                              <1> ;          bx = message address
-   136                              <1> ;
-   137                              <1> ;print:
-   138                              <1> ;        	mov  al,byte ds:[bx]
-   139                              <1> ;        	cmp  al,0h
-   140                              <1> ;        	jz   fimPrint;
-   141                              <1> ;
-   142                              <1> ;			MOV	DX, uart_tx_rx
-   143                              <1> ; ;       	OUT	DX, AL
-   144                              <1> ;			mov	cx, 0xff
-   145                              <1> ;			call basicDelay
-   146                              <1> ;
-   147                              <1> ;        	inc  bx
-   148                              <1> ;        	jmp  print
-   149                              <1> ;fimPrint:   ret
+    90 0000627D C3                  <1> 			RET
+    91                              <1> 
+    92                              <1> UART_RX_blct:	
+    93 0000627E BAFD03              <1> 			MOV DX, uart_LSR
+    94 00006281 EC                  <1> 			IN	AL, DX	 		; Get the line status register
+    95 00006282 2401                <1> 			AND AL, 0x01		; Check for characters in buffer
+    96 00006284 74F8                <1> 			JZ	UART_RX_blct	; Just loopif no characters
+    97 00006286 BAF803              <1> 			MOV DX, uart_tx_rx
+    98 00006289 EC                  <1> 			IN	AL, DX			; Read the character from the UART receive buffer
+    99 0000628A C3                  <1> 			RET
+   100                              <1> 
+   101                              <1> 
+   102                              <1> printch:
+   103                              <1> UART_TX:	
+   104 0000628B 52                  <1> 			PUSH DX
+   105 0000628C 51                  <1> 			PUSH CX 	
+   106 0000628D 53                  <1> 			PUSH BX
+   107 0000628E 50                  <1> 			PUSH AX
+   108 0000628F BBFF7F              <1> 			MOV BX, UART_TX_WAIT	; Set CB to the transmit timeout
+   109                              <1> LOOP_UART_TX:
+   110 00006292 BAFD03              <1> 			MOV DX, uart_LSR
+   111 00006295 EC                  <1> 			IN	AL,	DX 				; Get the line status register
+   112 00006296 2460                <1> 			AND AL, 0x60			; Check for TX empty
+   113 00006298 750D                <1> 			JNZ	OUT_UART_TX			; If set, then TX is empty, goto transmit
+   114 0000629A B9FF17              <1> 			mov	cx, 0x17ff
+   115 0000629D E85600              <1> 			call basicDelay
+   116 000062A0 4B                  <1> 			DEC	BX
+   117 000062A1 75EF                <1> 			JNZ LOOP_UART_TX		; Otherwise loop
+   118 000062A3 58                  <1> 			POP	AX					; We've timed out at this point so
+   119 000062A4 5B                  <1> 			POP BX
+   120 000062A5 F8                  <1> 			CLC						; Clear the carry flag and preserve AX
+   121 000062A6 C3                  <1> 			RET
+   122                              <1> OUT_UART_TX:
+   123 000062A7 58                  <1> 			POP	AX					; Good to send at this point, so	
+   124 000062A8 3C0D                <1> 			CMP AL, 0x0D
+   125 000062AA 740F                <1> 			JZ  println
+   126 000062AC BAF803              <1> 			MOV	DX, uart_tx_rx
+   127 000062AF EE                  <1> 			OUT	DX, AL		; Write the character to the UART transmit buffer
+   128 000062B0 B9FF02              <1> 			mov	cx, 0x2ff
+   129 000062B3 E84000              <1> 			call basicDelay
+   130 000062B6 5B                  <1> 			POP BX
+   131 000062B7 59                  <1> 			POP CX
+   132 000062B8 5A                  <1> 			POP DX
+   133 000062B9 F9                  <1> 			STC						; Set carry flag
+   134 000062BA C3                  <1> 			RET
+   135                              <1> println:
+   136 000062BB BAF803              <1> 			MOV	DX, uart_tx_rx
+   137 000062BE EE                  <1> 			OUT	DX, AL		; Write the character to the UART transmit buffer
+   138 000062BF B9FF00              <1> 			mov	cx, 0xff
+   139 000062C2 E83100              <1> 			call basicDelay
+   140 000062C5 B00A                <1> 			MOV AL, 0x0A
+   141 000062C7 BAF803              <1> 			MOV	DX, uart_tx_rx
+   142 000062CA EE                  <1> 			OUT	DX, AL		; Write the character to the UART transmit buffer
+   143 000062CB B9FF00              <1> 			mov	CX, 0xff
+   144 000062CE E82500              <1> 			call basicDelay
+   145 000062D1 5B                  <1> 			POP BX	
+   146 000062D2 59                  <1> 			POP CX
+   147 000062D3 5A                  <1> 			POP DX
+   148 000062D4 F9                  <1> 			STC						; Set carry flag
+   149 000062D5 C3                  <1> 			RET
    150                              <1> 
-   151                              <1> print2:
-   152 00006225 3E8A07              <1>         	mov  al,byte ds:[bx]
-   153 00006228 3C00                <1>         	cmp  al,0h
-   154 0000622A 7408                <1>         	jz   fimPrint2
-   155                              <1> cont:
-   156 0000622C E8B1FF              <1> 			call UART_TX
-   157 0000622F 73FB                <1> 			JNC	cont
-   158                              <1> 
-   159 00006231 43                  <1>         	inc  bx
-   160 00006232 EBF1                <1>         	jmp  print2
-   161 00006234 C3                  <1> fimPrint2:   ret		
-   162                              <1> 
-   163                              <1> print3:
-   164 00006235 3E8A07              <1>         	mov  al,byte ds:[bx]
-   165 00006238 3C00                <1>         	cmp  al,0h
-   166 0000623A 740D                <1>         	jz   fimPrint3
-   167                              <1> 
-   168 0000623C BAF803              <1> 			MOV	DX, uart_tx_rx
-   169 0000623F EE                  <1> 			OUT	DX, AL		; Write the character to the UART transmit buffer
-   170 00006240 B9FF00              <1> 			mov	cx, 0xff
-   171 00006243 E80400              <1> 			call basicDelay
-   172                              <1> 
-   173 00006246 43                  <1>         	inc  bx
-   174 00006247 EBDC                <1>         	jmp  print2
-   175 00006249 C3                  <1> fimPrint3:   ret		
+   151                              <1> ;print
+   152                              <1> ;parameters:
+   153                              <1> ;          bx = message address
+   154                              <1> ;
+   155                              <1> ;print:
+   156                              <1> ;        	mov  al,byte ds:[bx]
+   157                              <1> ;        	cmp  al,0h
+   158                              <1> ;        	jz   fimPrint;
+   159                              <1> ;
+   160                              <1> ;			MOV	DX, uart_tx_rx
+   161                              <1> ; ;       	OUT	DX, AL
+   162                              <1> ;			mov	cx, 0xff
+   163                              <1> ;			call basicDelay
+   164                              <1> ;
+   165                              <1> ;        	inc  bx
+   166                              <1> ;        	jmp  print
+   167                              <1> ;fimPrint:   ret
+   168                              <1> 
+   169                              <1> print2:
+   170 000062D6 3E8A07              <1>         	mov  al,byte ds:[bx]
+   171 000062D9 3C00                <1>         	cmp  al,0h
+   172 000062DB 7408                <1>         	jz   fimPrint2
+   173                              <1> cont:
+   174 000062DD E8ABFF              <1> 			call UART_TX
+   175 000062E0 73FB                <1> 			JNC	cont
    176                              <1> 
-   177                              <1> 	
-   178                              <1> basicDelay:
-   179 0000624A 49                  <1>         dec cx
-   180 0000624B 75FD                <1>         jnz basicDelay
-   181 0000624D C3                  <1>         ret
-   223                                  %include "DRVLCD20X04_8088.asm"	
+   177 000062E2 43                  <1>         	inc  bx
+   178 000062E3 EBF1                <1>         	jmp  print2
+   179 000062E5 C3                  <1> fimPrint2:   ret		
+   180                              <1> 
+   181                              <1> printFromDram:
+   182 000062E6 268A07              <1>         	mov  al,byte es:[bx]
+   183 000062E9 3C00                <1>         	cmp  al,0h
+   184 000062EB 7408                <1>         	jz   fimPrintFromDram
+   185                              <1> 
+   186                              <1> contFromDram:
+   187 000062ED E89BFF              <1> 			call UART_TX
+   188 000062F0 73FB                <1> 			JNC	contFromDram
+   189 000062F2 43                  <1>         	inc  bx
+   190 000062F3 EBF1                <1>         	jmp  printFromDram
+   191                              <1> 
+   192                              <1> fimPrintFromDram:  
+   193 000062F5 C3                  <1> 			ret		
+   194                              <1> 
+   195                              <1> ;print3:
+   196                              <1> ;        	mov  al,byte ds:[bx]
+   197                              <1> ;        	cmp  al,0h
+   198                              <1> ;        	jz   fimPrint3
+   199                              <1> ;
+   200                              <1> ;			MOV	DX, uart_tx_rx
+   201                              <1> ;			OUT	DX, AL		; Write the character to the UART transmit buffer
+   202                              <1> ;			mov	cx, 0xff
+   203                              <1> ;			call basicDelay
+   204                              <1> ;
+   205                              <1> ;        	inc  bx
+   206                              <1> ;        	jmp  print2
+   207                              <1> ;fimPrint3:   ret		
+   208                              <1> 
+   209                              <1> 	
+   210                              <1> basicDelay:
+   211 000062F6 49                  <1>         dec cx
+   212 000062F7 75FD                <1>         jnz basicDelay
+   213 000062F9 C3                  <1>         ret
+   324                                  %include "DRVLCD20X04_8088.asm"	
      1                              <1>         CPU 8086
      2                              <1>         BITS 16
      3                              <1> LCD_CMD     EQU 0x80
@@ -441,125 +574,125 @@
     13                              <1> LCD_SETDDRAMADDR   EQU 0x80
     14                              <1> 
     15                              <1> printAL:
-    16 0000624E E681                <1>         out LCD_DATA, al
-    17 00006250 B90016              <1>         mov cx, 0x1600
-    18 00006253 E8F4FF              <1>         call basicDelay
-    19 00006256 C3                  <1>         ret
+    16 000062FA E681                <1>         out LCD_DATA, al
+    17 000062FC B90016              <1>         mov cx, 0x1600
+    18 000062FF E8F4FF              <1>         call basicDelay
+    19 00006302 C3                  <1>         ret
     20                              <1> 
     21                              <1> printAX:
-    22 00006257 E681                <1>         out LCD_DATA, al
-    23 00006259 B90016              <1>         mov cx, 0x1600
-    24 0000625C E8EBFF              <1>         call basicDelay
-    25 0000625F 88E0                <1>         mov al,ah
-    26 00006261 BA8100              <1>         mov  dx,LCD_DATA
-    27 00006264 EE                  <1>         out dx, al
-    28 00006265 B90016              <1>         mov cx, 0x1600
-    29 00006268 E8DFFF              <1>         call basicDelay
-    30 0000626B C3                  <1>         ret
+    22 00006303 E681                <1>         out LCD_DATA, al
+    23 00006305 B90016              <1>         mov cx, 0x1600
+    24 00006308 E8EBFF              <1>         call basicDelay
+    25 0000630B 88E0                <1>         mov al,ah
+    26 0000630D BA8100              <1>         mov  dx,LCD_DATA
+    27 00006310 EE                  <1>         out dx, al
+    28 00006311 B90016              <1>         mov cx, 0x1600
+    29 00006314 E8DFFF              <1>         call basicDelay
+    30 00006317 C3                  <1>         ret
     31                              <1> 
     32                              <1> printstr:
-    33 0000626C 3E8A07              <1>         mov al,byte ds:[bx]
-    34 0000626F 3C00                <1>         cmp al,0h
-    35 00006271 7406                <1>         jz  fim
-    36 00006273 E8D8FF              <1>         call printAL
-    37 00006276 43                  <1>         inc bx
-    38 00006277 EBF3                <1>         jmp printstr
-    39 00006279 C3                  <1> fim:    ret
+    33 00006318 3E8A07              <1>         mov al,byte ds:[bx]
+    34 0000631B 3C00                <1>         cmp al,0h
+    35 0000631D 7406                <1>         jz  fim
+    36 0000631F E8D8FF              <1>         call printAL
+    37 00006322 43                  <1>         inc bx
+    38 00006323 EBF3                <1>         jmp printstr
+    39 00006325 C3                  <1> fim:    ret
     40                              <1> 
     41                              <1> setCursor:
-    42 0000627A 50                  <1>         push AX
-    43 0000627B 30E4                <1>         xor  ah,ah            ; limpa AH
-    44 0000627D BB[5700]            <1>         mov  bx, row          ; pega o endereço do array
-    45 00006280 01D8                <1>         add  ax,bx            ; soma com o endereco com AL 1000+1 = 1001=40
-    46 00006282 89C3                <1>         mov  bx, ax           ; poe o 1001 no bx
-    47 00006284 3E8A07              <1>         mov  al, byte ds:[bx] ; bl = 40 lido da memoria 1001 em bx
-    48 00006287 88C3                <1>         mov  bl, al
-    49 00006289 58                  <1>         pop  AX               ; resgata AH
-    50 0000628A 88D8                <1>         mov  al, bl
-    51 0000628C 00E0                <1>         add  al, ah
-    52 0000628E 0C80                <1>         or   al, LCD_SETDDRAMADDR ;| ( ah + al)
-    53 00006290 E680                <1>         out LCD_CMD, al
-    54 00006292 B90016              <1>         mov cx, 0x1600
-    55 00006295 E8B2FF              <1>         call basicDelay
+    42 00006326 50                  <1>         push AX
+    43 00006327 30E4                <1>         xor  ah,ah            ; limpa AH
+    44 00006329 BB[5700]            <1>         mov  bx, row          ; pega o endereço do array
+    45 0000632C 01D8                <1>         add  ax,bx            ; soma com o endereco com AL 1000+1 = 1001=40
+    46 0000632E 89C3                <1>         mov  bx, ax           ; poe o 1001 no bx
+    47 00006330 3E8A07              <1>         mov  al, byte ds:[bx] ; bl = 40 lido da memoria 1001 em bx
+    48 00006333 88C3                <1>         mov  bl, al
+    49 00006335 58                  <1>         pop  AX               ; resgata AH
+    50 00006336 88D8                <1>         mov  al, bl
+    51 00006338 00E0                <1>         add  al, ah
+    52 0000633A 0C80                <1>         or   al, LCD_SETDDRAMADDR ;| ( ah + al)
+    53 0000633C E680                <1>         out LCD_CMD, al
+    54 0000633E B90016              <1>         mov cx, 0x1600
+    55 00006341 E8B2FF              <1>         call basicDelay
     56                              <1> 
-    57 00006298 C3                  <1>         ret
+    57 00006344 C3                  <1>         ret
     58                              <1> setCursor2:
-    59 00006299 B01D                <1>         mov  al, 29
-    60 0000629B 0C80                <1>         or   al, LCD_SETDDRAMADDR ;| ( ah + al)
-    61 0000629D E680                <1>         out LCD_CMD, al
-    62 0000629F B90016              <1>         mov cx, 0x1600
-    63 000062A2 E8A5FF              <1>         call basicDelay
-    64 000062A5 C3                  <1>         ret
+    59 00006345 B01D                <1>         mov  al, 29
+    60 00006347 0C80                <1>         or   al, LCD_SETDDRAMADDR ;| ( ah + al)
+    61 00006349 E680                <1>         out LCD_CMD, al
+    62 0000634B B90016              <1>         mov cx, 0x1600
+    63 0000634E E8A5FF              <1>         call basicDelay
+    64 00006351 C3                  <1>         ret
     65                              <1> 
     66                              <1> lcdInit:
-    67 000062A6 B90048              <1>         mov cx, 0x4800
-    68 000062A9 E89EFF              <1>         call basicDelay
+    67 00006352 B90048              <1>         mov cx, 0x4800
+    68 00006355 E89EFF              <1>         call basicDelay
     69                              <1> 
-    70 000062AC B030                <1>         mov al, 0x30
-    71 000062AE E680                <1>         out LCD_CMD, al
+    70 00006358 B030                <1>         mov al, 0x30
+    71 0000635A E680                <1>         out LCD_CMD, al
     72                              <1> 
-    73 000062B0 B90008              <1>         mov cx, 0x0800
-    74 000062B3 E894FF              <1>         call basicDelay
+    73 0000635C B90008              <1>         mov cx, 0x0800
+    74 0000635F E894FF              <1>         call basicDelay
     75                              <1> 
-    76 000062B6 B030                <1>         mov al, 0x30
-    77 000062B8 E680                <1>         out LCD_CMD, al
+    76 00006362 B030                <1>         mov al, 0x30
+    77 00006364 E680                <1>         out LCD_CMD, al
     78                              <1> 
-    79 000062BA B96001              <1>         mov cx, 0x0160
-    80 000062BD E88AFF              <1>         call basicDelay
+    79 00006366 B96001              <1>         mov cx, 0x0160
+    80 00006369 E88AFF              <1>         call basicDelay
     81                              <1> 
-    82 000062C0 B038                <1>         mov al, 0x38    ; function set
-    83 000062C2 E680                <1>         out LCD_CMD, al
+    82 0000636C B038                <1>         mov al, 0x38    ; function set
+    83 0000636E E680                <1>         out LCD_CMD, al
     84                              <1> 
-    85 000062C4 B90016              <1>         mov cx, 0x1600
-    86 000062C7 E880FF              <1>         call basicDelay
+    85 00006370 B90016              <1>         mov cx, 0x1600
+    86 00006373 E880FF              <1>         call basicDelay
     87                              <1> 
-    88 000062CA B008                <1>         mov al, 0x08    ; display off
-    89 000062CC E680                <1>         out LCD_CMD, al
+    88 00006376 B008                <1>         mov al, 0x08    ; display off
+    89 00006378 E680                <1>         out LCD_CMD, al
     90                              <1> 
-    91 000062CE B90016              <1>         mov cx, 0x1600
-    92 000062D1 E876FF              <1>         call basicDelay
+    91 0000637A B90016              <1>         mov cx, 0x1600
+    92 0000637D E876FF              <1>         call basicDelay
     93                              <1> 
-    94 000062D4 B001                <1>         mov al, 0x01    ; clear display
-    95 000062D6 E680                <1>         out LCD_CMD, al
+    94 00006380 B001                <1>         mov al, 0x01    ; clear display
+    95 00006382 E680                <1>         out LCD_CMD, al
     96                              <1> 
-    97 000062D8 B90016              <1>         mov cx, 0x1600
-    98 000062DB E86CFF              <1>         call basicDelay
+    97 00006384 B90016              <1>         mov cx, 0x1600
+    98 00006387 E86CFF              <1>         call basicDelay
     99                              <1> 
-   100 000062DE B002                <1>         mov al, 0x02    ; return home
-   101 000062E0 E680                <1>         out LCD_CMD, al
+   100 0000638A B002                <1>         mov al, 0x02    ; return home
+   101 0000638C E680                <1>         out LCD_CMD, al
    102                              <1> 
-   103 000062E2 B90016              <1>         mov cx, 0x1600
-   104 000062E5 E862FF              <1>         call basicDelay
+   103 0000638E B90016              <1>         mov cx, 0x1600
+   104 00006391 E862FF              <1>         call basicDelay
    105                              <1> 
-   106 000062E8 B006                <1>         mov al, 0x06    ; entry mode set
-   107 000062EA E680                <1>         out LCD_CMD, al
+   106 00006394 B006                <1>         mov al, 0x06    ; entry mode set
+   107 00006396 E680                <1>         out LCD_CMD, al
    108                              <1> 
-   109 000062EC B90016              <1>         mov cx, 0x1600
-   110 000062EF E858FF              <1>         call basicDelay
+   109 00006398 B90016              <1>         mov cx, 0x1600
+   110 0000639B E858FF              <1>         call basicDelay
    111                              <1> 
-   112 000062F2 B00C                <1>         mov al, 0x0c    ; display on, no cursor
-   113 000062F4 E680                <1>         out LCD_CMD, al
+   112 0000639E B00C                <1>         mov al, 0x0c    ; display on, no cursor
+   113 000063A0 E680                <1>         out LCD_CMD, al
    114                              <1> 
-   115 000062F6 B90016              <1>         mov cx, 0x1600
-   116 000062F9 E84EFF              <1>         call basicDelay
-   117 000062FC C3                  <1>         ret
+   115 000063A2 B90016              <1>         mov cx, 0x1600
+   116 000063A5 E84EFF              <1>         call basicDelay
+   117 000063A8 C3                  <1>         ret
    118                              <1> 
-   224                                  ;%include "serial1.inc"	
-   225                                  ;%include "serial2.inc"	
-   226                                  ;%include "errno.inc"	
-   227                                  ;%include "messages.inc"	
-   228                                  %include "screen.asm"	
+   325                                  ;%include "serial1.inc"	
+   326                                  ;%include "serial2.inc"	
+   327                                  ;%include "errno.inc"	
+   328                                  ;%include "messages.inc"	
+   329                                  %include "screen.asm"	
      1                              <1> 
-     2 000062FD 1B5B324A00          <1> cls     db 0x1B,"[2J",0
-     3 00006302 1B5B213B214800      <1> curpos  db 0x1B,"[!;!H",0
+     2 000063A9 1B5B324A00          <1> cls     db 0x1B,"[2J",0
+     3 000063AE 1B5B213B214800      <1> curpos  db 0x1B,"[!;!H",0
      4                              <1> 
      5                              <1> ;=====================
      6                              <1> ; ESC [ 2 J
      7                              <1> ;
      8                              <1> scr_clear:
-     9 00006309 BB[FD62]            <1>         mov	bx, cls
-    10 0000630C E816FF              <1>         call print2	
-    11 0000630F C3                  <1>         ret
+     9 000063B5 BB[A963]            <1>         mov	bx, cls
+    10 000063B8 E81BFF              <1>         call print2	
+    11 000063BB C3                  <1>         ret
     12                              <1> ;=====================
     13                              <1> ; ESC [ Pl ; Pc H
     14                              <1> ; input:
@@ -567,42 +700,42 @@
     16                              <1> ; 	dl = x position
     17                              <1> ; MARK: scr_goto
     18                              <1> scr_goto:
-    19 00006310 1E                  <1>         push DS
-    20 00006311 B80000              <1>         mov AX, 0x0
-    21 00006314 8ED8                <1>         mov DS, AX
-    22 00006316 89C3                <1>         mov bx, AX
-    23 00006318 3EC6071B            <1>         mov byte ds:[bx],0x1B
-    24 0000631C 43                  <1>         inc bx
-    25 0000631D 3EC6075B            <1>         mov byte ds:[bx],'['
-    26 00006321 43                  <1>         inc bx
-    27 00006322 3EC6070A            <1>         mov byte ds:[bx],10
-    28 00006326 43                  <1>         inc bx
-    29 00006327 3EC6073B            <1>         mov byte ds:[bx],';'
-    30 0000632B 43                  <1>         inc bx
-    31 0000632C 3EC6070A            <1>         mov byte ds:[bx],10
-    32 00006330 43                  <1>         inc bx
-    33 00006331 3EC60748            <1>         mov byte ds:[bx],'H'  
-    34 00006335 43                  <1>         inc bx
-    35 00006336 3EC60700            <1>         mov byte ds:[bx],0x0
+    19 000063BC 1E                  <1>         push DS
+    20 000063BD B80000              <1>         mov AX, 0x0
+    21 000063C0 8ED8                <1>         mov DS, AX
+    22 000063C2 89C3                <1>         mov bx, AX
+    23 000063C4 3EC6071B            <1>         mov byte ds:[bx],0x1B
+    24 000063C8 43                  <1>         inc bx
+    25 000063C9 3EC6075B            <1>         mov byte ds:[bx],'['
+    26 000063CD 43                  <1>         inc bx
+    27 000063CE 3EC6070A            <1>         mov byte ds:[bx],10
+    28 000063D2 43                  <1>         inc bx
+    29 000063D3 3EC6073B            <1>         mov byte ds:[bx],';'
+    30 000063D7 43                  <1>         inc bx
+    31 000063D8 3EC6070A            <1>         mov byte ds:[bx],10
+    32 000063DC 43                  <1>         inc bx
+    33 000063DD 3EC60748            <1>         mov byte ds:[bx],'H'  
+    34 000063E1 43                  <1>         inc bx
+    35 000063E2 3EC60700            <1>         mov byte ds:[bx],0x0
     36                              <1> 
     37                              <1> 
-    38 0000633A B80000              <1>         mov AX, 0x0
-    39 0000633D 89C3                <1>         mov bx, AX
-    40 0000633F E8E3FE              <1>         call print2
-    41 00006342 1F                  <1>         POP DS
-    42 00006343 C3                  <1> 		ret
+    38 000063E6 B80000              <1>         mov AX, 0x0
+    39 000063E9 89C3                <1>         mov bx, AX
+    40 000063EB E8E8FE              <1>         call print2
+    41 000063EE 1F                  <1>         POP DS
+    42 000063EF C3                  <1> 		ret
     43                              <1> 
     44                              <1> 
-   229                                  
-   230 00006344 FF<rep 1CACh>                   setloc	0FFF0h			; Power-On Entry Point
-   230          ******************       warning: Inserting 7340 bytes [-w+user]
-   231                                  reset:
-   232 00007FF0 EA[9360]00F0                    jmp 0xF000:init2
-   233                                  
-   234                                          setloc	0FFF5h			; ROM Date in ASCII
-   235 00007FF5 32322F31302F3234                db	DATE			; BIOS release date MM/DD/YY
-   236 00007FFD 20                              db	20h
-   237                                  
-   238                                          setloc	0FFFEh			; System Model byte
-   239 00007FFE FE                              db	MODEL_BYTE
-   240 00007FFF FF                              db	0ffh
+   330                                  
+   331 000063F0 FF<rep 1C00h>                   setloc	0FFF0h			; Power-On Entry Point
+   331          ******************       warning: Inserting 7168 bytes [-w+user]
+   332                                  reset:
+   333 00007FF0 EA[9360]00F0                    jmp 0xF000:init
+   334                                  
+   335                                          setloc	0FFF5h			; ROM Date in ASCII
+   336 00007FF5 32322F31302F3234                db	DATE			; BIOS release date MM/DD/YY
+   337 00007FFD 20                              db	20h
+   338                                  
+   339                                          setloc	0FFFEh			; System Model byte
+   340 00007FFE FE                              db	MODEL_BYTE
+   341 00007FFF FF                              db	0ffh

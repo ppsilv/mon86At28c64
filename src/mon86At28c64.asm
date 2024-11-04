@@ -16,8 +16,13 @@
 ; 2444 - Version 10.0.01 implemented print2
 ; 2444 - Version 10.0.01 fixed erro in UART_TX, no push de BX
 ; 2444 - Version 10.0.02 implemented prompt
+; 2445 - Version 10.0.03 now run in a 32k bytes of eeprom.
+;                        START = 0x8000
+;                        init2 = 0xE000
+;                        reset = 0xFFF0
+; 0C000h
 
-%define	START		0E000h		; BIOS starts at offset 08000h
+%define	START		08000h		; BIOS starts at offset 08000h
 %define DATE		'22/10/24'
 %define MODEL_BYTE	0FEh		; IBM PC/XT
 %define VERSION		'1.0.02'	; BIOS version
@@ -41,13 +46,15 @@ msg2    db "Mon86 V 1.0.00 2443A",0
 msg3    db "1MB dram rom at28c64",0
 row:    db 0, 40, 20, 84, 80
 
-welcome		db	0x1B,"[2JXT 8088 BIOS, Version "
+        setloc	0E000h
+
+welcome		db	"XT 8088 BIOS, Version "
 		db	VERSION
 		db	". ", 0Dh
 		db	"Paulo Silva(pgordao) - Copyright (C) 2024", 0Dh
 		db	"CPU 8088-2   board TXM/8 III  ", 0Dh
 		db	"Mon86 V ",VERSION ," 2443A 1MB Dram Rom at28c64", 0Dh, 0
-
+        
 init2:
         cli				; disable interrupts
         cld				; clear direction flag
@@ -59,9 +66,15 @@ init2:
         mov es, sp
 
         call configure_uart
-        mov	bx, welcome
+
+        call scr_clear
+
+        mov  bx, welcome
         call print2
 
+        Mov dh, 0x6
+        Mov dl, 0xf
+        ;call scr_goto
 
 
 loop:
@@ -74,6 +87,12 @@ loopP:
         JNZ loopP
         call printPrompt
         jmp loopP
+        ret
+;=================================
+; Dump memory
+; Memory address: bx
+;
+dump:
         ret
 
 printPrompt:
@@ -206,10 +225,11 @@ print_byte:
 ;%include "serial2.inc"	
 ;%include "errno.inc"	
 ;%include "messages.inc"	
+%include "screen.asm"	
 
         setloc	0FFF0h			; Power-On Entry Point
 reset:
-        jmp 0xF000:init
+        jmp 0xF000:init2
 
         setloc	0FFF5h			; ROM Date in ASCII
         db	DATE			; BIOS release date MM/DD/YY

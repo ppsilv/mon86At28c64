@@ -111,7 +111,7 @@ OUT_UART_TX:
 			JZ  println
 			MOV	DX, uart_tx_rx
 			OUT	DX, AL		; Write the character to the UART transmit buffer
-			mov	cx, 0xff
+			mov	cx, 0x2ff
 			call basicDelay
 			POP BX	
 			STC						; Set carry flag
@@ -160,14 +160,20 @@ cont:
         	jmp  print2
 fimPrint2:   ret		
 
-;;serialLoop:
-;;			mov	al,'C'
-;;        	OUT	uart_tx_rx,AL
-;;			mov	cx, 0xff
-;;			call basicDelay
-;;			jmp serialLoop
-;;
-;;			ret
+print3:
+        	mov  al,byte ds:[bx]
+        	cmp  al,0h
+        	jz   fimPrint3
+
+			MOV	DX, uart_tx_rx
+			OUT	DX, AL		; Write the character to the UART transmit buffer
+			mov	cx, 0xff
+			call basicDelay
+
+        	inc  bx
+        	jmp  print2
+fimPrint3:   ret		
+
 	
 basicDelay:
         dec cx
